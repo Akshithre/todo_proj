@@ -1,0 +1,199 @@
+{
+  "name": "TodoTaskDataPipeline",
+  "properties": {
+    "description": "Reads task data from Azure SQL, transforms it, and saves processed CSV to Blob Storage",
+    "activities": [
+      {
+        "name": "CopyTaskDataFromSQL",
+        "type": "Copy",
+        "inputs": [
+          {
+            "referenceName": "AzureSqlTasksDataset",
+            "type": "DatasetReference"
+          }
+        ],
+        "outputs": [
+          {
+            "referenceName": "BlobRawTasksDataset",
+            "type": "DatasetReference"
+          }
+        ],
+        "typeProperties": {
+          "source": {
+            "type": "AzureSqlSource",
+            "sqlReaderQuery": "SELECT task_id, task_name, priority, deadline, estimated_time, actual_time, status, category, created_at FROM tasks WHERE status = 'Completed' AND actual_time IS NOT NULL"
+          },
+          "sink": {
+            "type": "DelimitedTextSink",
+            "formatSettings": {
+              "type": "DelimitedTextWriteSettings",
+              "fileExtension": ".csv"
+            }
+          }
+        }
+      },
+      {
+        "name": "TransformTaskData",
+        "type": "DataFlow",
+        "dependsOn": [
+          {
+            "activity": "CopyTaskDataFromSQL",
+            "dependencyConditions": ["Succeeded"]
+          }
+        ],
+        "typeProperties": {
+          "dataflow": {
+            "referenceName": "TransformTasksDataFlow",
+            "type": "DataFlowReference"
+          }
+        }
+      }
+    ]
+  },
+  "dataflows": [
+    {
+      "name": "TransformTasksDataFlow",
+      "properties": {
+        "description": "Remove nulls, normalize priority scores, calculate completion rate",
+        "sources": [
+          {
+            "name": "RawTasks",
+            "dataset": {
+              "referenceName": "BlobRawTasksDataset",
+              "type": "DatasetReference"
+            }
+          }
+        ],
+        "transformations": [
+          {
+            "name": "RemoveNulls",
+            "description": "Filter out rows with null actual_time or estimated_time",
+            "filter": {
+              "condition": "!isNull(actual_time) && !isNull(estimated_time)"
+            }
+          },
+          {
+            "name": "NormalizePriority",
+            "description": "Convert priority text to numeric score",
+            "derivedColumn": {
+              "columns": [
+                {
+                  "name": "priority_score",
+                  "expression": "case(priority == 'High', 3, priority == 'Medium', 2, 1)"
+                }
+              ]
+            }
+          },
+          {
+            "name": "CalculateCompletionRate",
+            "description": "Calculate how accurate estimates were",
+            "derivedColumn": {
+              "columns": [
+                {
+                  "name": "completion_rate",
+                  "expression": "estimated_time / actual_time"
+                },
+                {
+                  "name": "deadline_gap_hours",
+                  "expression": "hoursBetween(created_at, deadline)"
+                }
+              ]
+            }
+          }
+        ],
+        "sinks": [
+          {
+            "name": "ProcessedTasks",
+            "dataset": {
+              "referenceName": "BlobProcessedTasksDataset",
+              "type": "DatasetReference"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "datasets": [
+    {
+      "name": "AzureSqlTasksDataset",
+      "properties": {
+        "linkedServiceName": {
+          "referenceName": "AzureSqlLinkedService",
+          "type": "LinkedServiceReference"
+        },
+        "type": "AzureSqlTable",
+        "typeProperties": {
+          "tableName": "tasks"
+        }
+      }
+    },
+    {
+      "name": "BlobRawTasksDataset",
+      "properties": {
+        "linkedServiceName": {
+          "referenceName": "AzureBlobStorageLinkedService",
+          "type": "LinkedServiceReference"
+        },
+        "type": "DelimitedText",
+        "typeProperties": {
+          "location": {
+            "type": "AzureBlobStorageLocation",
+            "container": "tododata",
+            "fileName": "tasks_raw.csv"
+          },
+          "columnDelimiter": ",",
+          "firstRowAsHeader": true
+        }
+      }
+    },
+    {
+      "name": "BlobProcessedTasksDataset",
+      "properties": {
+        "linkedServiceName": {
+          "referenceName": "AzureBlobStorageLinkedService",
+          "type": "LinkedServiceReference"
+        },
+        "type": "DelimitedText",
+        "typeProperties": {
+          "location": {
+            "type": "AzureBlobStorageLocation",
+            "container": "tododata",
+            "fileName": "tasks_processed.csv"
+          },
+          "columnDelimiter": ",",
+          "firstRowAsHeader": true
+        }
+      }
+    }
+  ],
+  "linkedServices": [
+    {
+      "name": "AzureSqlLinkedService",
+      "properties": {
+        "type": "AzureSqlDatabase",
+        "typeProperties": {
+          "connectionString": "@{linkedService().connectionString}"
+        },
+        "parameters": {
+          "connectionString": {
+            "type": "String"
+          }
+        }
+      }
+    },
+    {
+      "name": "AzureBlobStorageLinkedService",
+      "properties": {
+        "type": "AzureBlobStorage",
+        "typeProperties": {
+          "connectionString": "@{linkedService().connectionString}"
+        },
+        "parameters": {
+          "connectionString": {
+            "type": "String"
+          }
+        }
+      }
+    }
+  ]
+}

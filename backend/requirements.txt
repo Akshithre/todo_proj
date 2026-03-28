@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+sqlalchemy
+pyodbc
+azure-storage-blob
+pandas
+scikit-learn
+python-dotenv
+pytest
+httpx
+pydantic
+joblib
