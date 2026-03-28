@@ -2,7 +2,23 @@
   "permissions": {
     "allow": [
       "Bash(pip install:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(xargs wc:*)",
+      "Bash(sed 's/.*\\\\.//')",
+      "Bash(where python:*)",
+      "Bash(python3 -m pip install -r requirements.txt)",
+      "Bash(where python3.exe)",
+      "Bash(where python.exe)",
+      "Read(//c/Users/pooji/AppData/Local/Programs/Python//**)",
+      "Bash(ls /c/Python*)",
+      "Bash(/c/Users/pooji/AppData/Local/Programs/Python/Python312/python.exe -m pip install -r requirements.txt)",
+      "Bash(/c/Users/pooji/AppData/Local/Programs/Python/Python312/python.exe -m pytest tests/ -v 2>&1)",
+      "Bash(DATABASE_URL=sqlite:///./test.db /c/Users/pooji/AppData/Local/Programs/Python/Python312/python.exe -m pytest tests/ -v 2>&1)",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"Frontend HTTP status: %{http_code}\\\\n\")",
+      "Bash(where python3:*)",
+      "Bash(where py:*)",
+      "Bash(py --version)",
+      "Bash(py -m pytest tests/ -v)"
     ]
   }
 }

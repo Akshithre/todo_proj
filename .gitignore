@@ -6,10 +6,26 @@ __pycache__/
 *.pyc
 *.pyo
 venv/
+.pytest_cache/
+
+# ML model files (too large for git)
+*.pkl
 
 # Node
 node_modules/
+build/
+dist/
 
 # IDE
 .vscode/
 .idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# SQLite dev databases
+*.db

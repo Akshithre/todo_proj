@@ -1,7 +1,56 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ---------- base reset ---------- */
 body {
-  @apply bg-gray-50 text-gray-900;
+  @apply bg-dark-900 text-white font-sans antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-dark-900;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-600 rounded-full;
+}
+
+/* ---------- glass utilities ---------- */
+@layer utilities {
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+  }
+  .glass-hover {
+    @apply glass transition-all duration-300 hover:bg-white/[0.08] hover:border-white/20 hover:shadow-lg hover:shadow-accent-glow/10;
+  }
+  .glass-card {
+    @apply glass p-5;
+  }
+  .gradient-accent {
+    background: linear-gradient(135deg, #6366f1, #3b82f6, #6366f1);
+    background-size: 300% 300%;
+    animation: gradient 8s ease infinite;
+  }
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #818cf8, #6366f1, #3b82f6);
+  }
+  .glow-accent {
+    box-shadow: 0 0 20px 2px rgba(99, 102, 241, 0.25);
+  }
+  .glow-success {
+    box-shadow: 0 0 20px 2px rgba(16, 185, 129, 0.25);
+  }
+  .glow-danger {
+    box-shadow: 0 0 20px 2px rgba(244, 63, 94, 0.25);
+  }
+  .shimmer-bg {
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.06) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
 }

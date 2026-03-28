@@ -1,3 +1,8 @@
+import os
+
+# Force SQLite before any app imports
+os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

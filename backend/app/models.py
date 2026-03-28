@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Enum as SQLEnum
-from datetime import datetime
+from datetime import datetime, timezone
 import enum
 from .database import Base
 
@@ -27,4 +27,4 @@ class Task(Base):
     actual_time = Column(Float, nullable=True)
     status = Column(String(20), default=TaskStatus.PENDING.value)
     category = Column(String(100), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

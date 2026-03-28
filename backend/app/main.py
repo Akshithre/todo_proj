@@ -1,12 +1,15 @@
 import os
 import json
 import joblib
-from datetime import datetime
-from typing import List
+import logging
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from typing import List, Dict, Optional
 from pathlib import Path
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 
@@ -18,20 +21,53 @@ from .schemas import (
 )
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Smart To-Do Task Optimizer", version="1.0.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
 
+
+app = FastAPI(title="Smart To-Do Task Optimizer", version="1.0.0", lifespan=lifespan)
+
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[o.strip() for o in origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled error on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
 ML_DIR = Path(__file__).resolve().parent.parent.parent / "ml"
+
+# ── model cache ──────────────────────────────────────────────────────────────
+
+_models: Dict[str, Optional[object]] = {}
+
+
+def _get_model(name: str):
+    if name not in _models:
+        path = ML_DIR / name
+        if path.exists():
+            try:
+                _models[name] = joblib.load(path)
+                logger.info("Loaded ML model: %s", name)
+            except Exception as e:
+                logger.error("Failed to load model %s: %s", name, e)
+                _models[name] = None
+        else:
+            _models[name] = None
+    return _models[name]
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -40,11 +76,15 @@ def _priority_score(priority: str) -> int:
     return {"High": 3, "Medium": 2, "Low": 1}.get(priority, 2)
 
 
-def _load_model(name: str):
-    path = ML_DIR / name
-    if path.exists():
-        return joblib.load(path)
-    return None
+def _hours_until_deadline(deadline: Optional[datetime]) -> float:
+    """Return hours until deadline, handling both naive and aware datetimes."""
+    if deadline is None:
+        return 168.0  # default 1 week
+    now = datetime.now(timezone.utc)
+    # If the deadline is naive (no tzinfo), treat it as UTC
+    if deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=timezone.utc)
+    return (deadline - now).total_seconds() / 3600
 
 
 # ── CRUD endpoints ───────────────────────────────────────────────────────────
@@ -66,16 +106,13 @@ def get_tasks(db: Session = Depends(get_db)):
 @app.get("/tasks/suggestions", response_model=List[PrioritySuggestion])
 def get_suggestions(db: Session = Depends(get_db)):
     tasks = db.query(Task).filter(Task.status != "Completed").all()
-    model = _load_model("priority_model.pkl")
+    model = _get_model("priority_model.pkl")
 
-    suggestions: list[PrioritySuggestion] = []
+    suggestions: List[PrioritySuggestion] = []
     for t in tasks:
         if model:
             try:
-                deadline_gap = (
-                    (t.deadline - datetime.utcnow()).total_seconds() / 3600
-                    if t.deadline else 168
-                )
+                deadline_gap = _hours_until_deadline(t.deadline)
                 features = [[
                     _priority_score(t.priority),
                     t.estimated_time or 1,
@@ -83,12 +120,13 @@ def get_suggestions(db: Session = Depends(get_db)):
                 ]]
                 pred = model.predict(features)[0]
                 suggested = {3: "High", 2: "Medium", 1: "Low"}.get(int(pred), t.priority)
-            except Exception:
+            except Exception as e:
+                logger.warning("Priority prediction failed for task %s: %s", t.task_id, e)
                 suggested = t.priority
         else:
             # Rule-based fallback when no model is available
+            hours_left = _hours_until_deadline(t.deadline)
             if t.deadline:
-                hours_left = (t.deadline - datetime.utcnow()).total_seconds() / 3600
                 if hours_left < 24:
                     suggested = "High"
                 elif hours_left < 72:
@@ -151,14 +189,11 @@ def predict_time(task_id: int, db: Session = Depends(get_db)):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    model = _load_model("completion_model.pkl")
+    model = _get_model("completion_model.pkl")
 
     if model:
         try:
-            deadline_gap = (
-                (task.deadline - datetime.utcnow()).total_seconds() / 3600
-                if task.deadline else 168
-            )
+            deadline_gap = _hours_until_deadline(task.deadline)
             features = [[
                 _priority_score(task.priority),
                 task.estimated_time or 1,
@@ -170,8 +205,8 @@ def predict_time(task_id: int, db: Session = Depends(get_db)):
                 predicted_time=round(predicted, 2),
                 confidence=0.85,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Completion prediction failed for task %s: %s", task.task_id, e)
 
     # Fallback: return estimated_time with lower confidence
     return TimePrediction(
