@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Clock, AlertTriangle, TrendingUp, Sparkles, ArrowRight } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, TrendingUp, Sparkles, ArrowRight, Brain } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Task, PrioritySuggestion } from "../types";
-import { getTasks, getSuggestions, updateTask } from "../services/api";
+import { Task, PrioritySuggestion, WeeklyDigest } from "../types";
+import { getTasks, getSuggestions, updateTask, getWeeklyDigest } from "../services/api";
 import { SkeletonStat, SkeletonCard } from "../components/SkeletonLoader";
 import AnimatedCounter from "../components/AnimatedCounter";
 import ProgressRing from "../components/ProgressRing";
 import PageWrapper from "../components/PageWrapper";
+import InitialsAvatar from "../components/InitialsAvatar";
+import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 import { formatDistanceToNow } from "date-fns";
@@ -19,8 +21,10 @@ const priorityColor: Record<string, string> = {
 };
 
 const Dashboard: React.FC = () => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [suggestions, setSuggestions] = useState<PrioritySuggestion[]>([]);
+  const [digest, setDigest] = useState<WeeklyDigest | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -31,14 +35,16 @@ const Dashboard: React.FC = () => {
     } catch {
       toast.error("Failed to load tasks");
     }
-    // Load suggestions independently – don't block dashboard on failure
     try {
       const s = await getSuggestions();
       setSuggestions(s);
     } catch {
-      // Silently fail – suggestions are non-critical
       setSuggestions([]);
     }
+    try {
+      const d = await getWeeklyDigest();
+      setDigest(d);
+    } catch {}
     setLoading(false);
   };
 
@@ -75,7 +81,7 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <PageWrapper title="Dashboard" subtitle="Your command center">
+    <PageWrapper title={`Welcome back, ${user?.full_name?.split(" ")[0] || "User"}`} subtitle="Your command center">
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {loading
@@ -99,7 +105,6 @@ const Dashboard: React.FC = () => {
                   </span>
                 </motion.div>
               ))}
-              {/* Completion Rate with ring */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -147,7 +152,12 @@ const Dashboard: React.FC = () => {
                   className="w-5 h-5 rounded-full border-2 border-muted/40 hover:border-success hover:bg-success/20 transition-all flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{t.task_name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm truncate">{t.task_name}</p>
+                    {t.assignee_name && (
+                      <InitialsAvatar name={t.assignee_name} size="xs" />
+                    )}
+                  </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted">
                     {t.deadline && (
                       <span className={new Date(t.deadline) < new Date() ? "text-danger" : ""}>
@@ -155,6 +165,9 @@ const Dashboard: React.FC = () => {
                       </span>
                     )}
                     {t.category && <span>{t.category}</span>}
+                    {t.comment_count > 0 && (
+                      <span className="flex items-center gap-1">💬 {t.comment_count}</span>
+                    )}
                   </div>
                 </div>
                 <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${priorityColor[t.priority] || ""}`}>
@@ -165,8 +178,9 @@ const Dashboard: React.FC = () => {
           )}
         </div>
 
-        {/* AI Suggestions */}
+        {/* Right column */}
         <div className="lg:col-span-2 space-y-4">
+          {/* AI Suggestions */}
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-accent" />
             <h2 className="text-lg font-semibold">AI Suggestions</h2>
@@ -199,6 +213,48 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Weekly Digest */}
+          {digest && (
+            <>
+              <div className="flex items-center gap-2 mt-2">
+                <Brain size={16} className="text-accent" />
+                <h2 className="text-lg font-semibold">Weekly Digest</h2>
+              </div>
+              <div className="glass-card relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent pointer-events-none" />
+                <div className="relative z-10 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                      <p className="text-lg font-bold text-success">{digest.completed}</p>
+                      <p className="text-[10px] text-muted">Completed</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                      <p className="text-lg font-bold text-warning">{digest.pending}</p>
+                      <p className="text-[10px] text-muted">Pending</p>
+                    </div>
+                  </div>
+                  {digest.top_contributors.length > 0 && (
+                    <div>
+                      <p className="text-[10px] text-muted uppercase tracking-wider mb-1.5">Top Contributors</p>
+                      {digest.top_contributors.map((c) => (
+                        <div key={c.name} className="flex items-center gap-2 py-1">
+                          <InitialsAvatar name={c.name} size="xs" />
+                          <span className="text-xs flex-1">{c.name}</span>
+                          <span className="text-xs text-success font-semibold">{c.completed}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {digest.insights.map((ins, i) => (
+                    <p key={i} className="text-xs text-muted flex items-start gap-1.5">
+                      <span className="text-accent">&#8226;</span> {ins}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </PageWrapper>

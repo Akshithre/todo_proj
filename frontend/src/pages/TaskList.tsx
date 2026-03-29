@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Filter, Clock, Trash2, Check, AlertTriangle, PlusCircle, List, Columns } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, Filter, Clock, Trash2, Check, AlertTriangle, PlusCircle, List, Columns, MessageSquare, Copy } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Task, TimePrediction } from "../types";
-import { getTasks, updateTask, deleteTask, predictTime } from "../services/api";
+import { getTasks, updateTask, deleteTask, predictTime, duplicateTask, getOrgMembers } from "../services/api";
 import { SkeletonCard } from "../components/SkeletonLoader";
 import PageWrapper from "../components/PageWrapper";
+import TaskDrawer from "../components/TaskDrawer";
+import InitialsAvatar from "../components/InitialsAvatar";
+import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 import { formatDistanceToNow } from "date-fns";
@@ -32,6 +35,10 @@ const kanbanColumns: { key: KanbanCol; color: string }[] = [
 ];
 
 const TaskList: React.FC = () => {
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const teamIdParam = searchParams.get("team_id");
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -39,15 +46,27 @@ const TaskList: React.FC = () => {
   const [sort, setSort] = useState<"priority" | "deadline" | "created">("priority");
   const [view, setView] = useState<ViewMode>("list");
   const [predictions, setPredictions] = useState<Record<number, TimePrediction>>({});
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [members, setMembers] = useState<{ user_id: number; full_name: string }[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { setTasks(await getTasks()); } catch { toast.error("Failed to load tasks"); }
+    try {
+      const params: any = {};
+      if (teamIdParam) params.team_id = Number(teamIdParam);
+      setTasks(await getTasks(params));
+    } catch {
+      toast.error("Failed to load tasks");
+    }
+    try {
+      const m = await getOrgMembers();
+      setMembers(m.map((u) => ({ user_id: u.user_id, full_name: u.full_name })));
+    } catch {}
     setLoading(false);
-  }, []);
+  }, [teamIdParam]);
+
   useEffect(() => { load(); }, [load]);
 
-  // Keyboard shortcut: "/" to focus search
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) {
@@ -81,6 +100,14 @@ const TaskList: React.FC = () => {
       const p = await predictTime(id);
       setPredictions((prev) => ({ ...prev, [id]: p }));
     } catch { toast.error("Prediction failed"); }
+  };
+
+  const handleDuplicate = async (id: number) => {
+    try {
+      await duplicateTask(id);
+      toast.success("Task duplicated");
+      load();
+    } catch { toast.error("Failed to duplicate"); }
   };
 
   const handleKanbanDrop = async (taskId: number, newStatus: KanbanCol) => {
@@ -122,6 +149,8 @@ const TaskList: React.FC = () => {
   const TaskCard: React.FC<{ t: Task; i: number; compact?: boolean }> = ({ t, i, compact }) => {
     const isOverdue = t.deadline && new Date(t.deadline) < now && t.status !== "Completed";
     const pred = predictions[t.task_id];
+    const reactionTotal = Object.values(t.reaction_counts || {}).reduce((a, b) => a + b, 0);
+
     return (
       <motion.div
         layout
@@ -131,12 +160,13 @@ const TaskList: React.FC = () => {
         transition={{ delay: i * 0.03 }}
         draggable={view === "kanban"}
         onDragStart={(e: any) => { e.dataTransfer?.setData("taskId", String(t.task_id)); }}
-        className={`glass-hover ${compact ? "p-3" : "p-4"} border-l-[3px] ${priorityBorder[t.priority] || "border-l-muted"} group ${view === "kanban" ? "cursor-grab active:cursor-grabbing" : ""}`}
+        onClick={() => setSelectedTask(t)}
+        className={`glass-hover ${compact ? "p-3" : "p-4"} border-l-[3px] ${priorityBorder[t.priority] || "border-l-muted"} group cursor-pointer ${view === "kanban" ? "active:cursor-grabbing" : ""}`}
       >
         <div className="flex items-start gap-3">
           {t.status !== "Completed" ? (
             <button
-              onClick={() => handleComplete(t.task_id)}
+              onClick={(e) => { e.stopPropagation(); handleComplete(t.task_id); }}
               className="mt-0.5 w-5 h-5 rounded-full border-2 border-muted/40 hover:border-success hover:bg-success/20 transition-all flex-shrink-0"
             />
           ) : (
@@ -150,6 +180,9 @@ const TaskList: React.FC = () => {
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${priorityBadge[t.priority] || ""}`}>
                 {t.priority}
               </span>
+              {t.assignee_name && (
+                <InitialsAvatar name={t.assignee_name} size="xs" />
+              )}
             </div>
             <div className="flex items-center gap-3 mt-1.5 text-xs text-muted flex-wrap">
               {t.category && <span className="bg-white/5 px-2 py-0.5 rounded-md">{t.category}</span>}
@@ -167,16 +200,30 @@ const TaskList: React.FC = () => {
                   <Clock size={10} /> AI: {pred.predicted_time}h ({Math.round(pred.confidence * 100)}%)
                 </span>
               )}
+              {t.comment_count > 0 && (
+                <span className="flex items-center gap-1"><MessageSquare size={10} /> {t.comment_count}</span>
+              )}
+              {reactionTotal > 0 && (
+                <span className="flex items-center gap-1">
+                  {Object.entries(t.reaction_counts).slice(0, 3).map(([emoji, count]) => (
+                    <span key={emoji}>{emoji}{count > 1 ? count : ""}</span>
+                  ))}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {t.status !== "Completed" && (
-              <button onClick={() => handlePredict(t.task_id)}
+              <button onClick={(e) => { e.stopPropagation(); handlePredict(t.task_id); }}
                 className="p-2 rounded-lg hover:bg-accent/20 text-muted hover:text-accent transition-all" title="Predict time">
                 <Clock size={14} />
               </button>
             )}
-            <button onClick={() => handleDelete(t.task_id)}
+            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(t.task_id); }}
+              className="p-2 rounded-lg hover:bg-accent/20 text-muted hover:text-accent transition-all" title="Duplicate">
+              <Copy size={14} />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); handleDelete(t.task_id); }}
               className="p-2 rounded-lg hover:bg-danger/20 text-muted hover:text-danger transition-all" title="Delete">
               <Trash2 size={14} />
             </button>
@@ -231,7 +278,6 @@ const TaskList: React.FC = () => {
             <option value="deadline">By Deadline</option>
             <option value="created">By Date</option>
           </select>
-          {/* View toggle */}
           <div className="flex bg-white/5 rounded-xl border border-white/10 overflow-hidden">
             <button
               onClick={() => setView("list")}
@@ -270,7 +316,6 @@ const TaskList: React.FC = () => {
           )}
         </motion.div>
       ) : view === "list" ? (
-        /* List View */
         <div className="space-y-3">
           <AnimatePresence mode="popLayout">
             {filtered.map((t, i) => (
@@ -279,7 +324,6 @@ const TaskList: React.FC = () => {
           </AnimatePresence>
         </div>
       ) : (
-        /* Kanban View */
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {kanbanColumns.map((col) => {
             const colTasks = filtered.filter((t) => {
@@ -314,6 +358,16 @@ const TaskList: React.FC = () => {
             );
           })}
         </div>
+      )}
+
+      {/* Task Drawer */}
+      {selectedTask && (
+        <TaskDrawer
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onUpdate={() => { load(); }}
+          members={members}
+        />
       )}
     </PageWrapper>
   );

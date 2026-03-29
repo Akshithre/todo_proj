@@ -25,7 +25,7 @@ const Login: React.FC = () => {
       navigate("/");
     } else {
       setShake(true);
-      toast.error("Invalid credentials. Try demo@todo.com / demo1234");
+      toast.error("Invalid email or password. Please try again.");
       setTimeout(() => setShake(false), 500);
     }
   };
@@ -119,7 +119,7 @@ const Login: React.FC = () => {
               </button>
             </div>
 
-            {/* Remember me */}
+            {/* Remember me + Forgot password */}
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer group">
                 <div
@@ -155,10 +155,6 @@ const Login: React.FC = () => {
               Sign up
             </Link>
           </p>
-
-          <div className="mt-8 p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-muted text-center">
-            Demo: <span className="text-white/70">demo@todo.com</span> / <span className="text-white/70">demo1234</span>
-          </div>
         </motion.div>
       </div>
     </div>
