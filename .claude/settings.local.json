@@ -18,7 +18,21 @@
       "Bash(where python3:*)",
       "Bash(where py:*)",
       "Bash(py --version)",
-      "Bash(py -m pytest tests/ -v)"
+      "Bash(py -m pytest tests/ -v)",
+      "Bash(py -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000)",
+      "Bash(DATABASE_URL=\"sqlite:///./todo.db\" py -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000)",
+      "Bash(taskkill //F //IM uvicorn.exe)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(taskkill //F //IM python.exe)",
+      "Bash(taskkill //F //IM \"py.exe\")",
+      "Bash(py -c \"import uvicorn; print\\(''uvicorn OK''\\)\")",
+      "Bash(curl -s http://localhost:8000/tasks)",
+      "Bash(py -m json.tool)",
+      "Bash(curl -sv http://localhost:8000/debug/db-info)",
+      "Bash(taskkill.exe //F //PID 5196)",
+      "Bash(taskkill.exe //F //PID 6840)",
+      "Bash(py -m uvicorn app.main:app --host 0.0.0.0 --port 8000)",
+      "Bash(py:*)"
     ]
   }
 }

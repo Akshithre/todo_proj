@@ -5,18 +5,34 @@ import { Toaster } from "react-hot-toast";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Sidebar from "./components/Sidebar";
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import AcceptInvite from "./pages/AcceptInvite";
 import Dashboard from "./pages/Dashboard";
 import AddTask from "./pages/AddTask";
 import TaskList from "./pages/TaskList";
 import Analytics from "./pages/Analytics";
 import SmartSuggestions from "./pages/SmartSuggestions";
 import Settings from "./pages/Settings";
+import Teams from "./pages/Teams";
+import TeamDetail from "./pages/TeamDetail";
+import AdminPanel from "./pages/AdminPanel";
+import NotificationsPage from "./pages/NotificationsPage";
 import QuickAddFab from "./components/QuickAddFab";
+import CommandPalette from "./components/CommandPalette";
+import NotificationDropdown from "./components/NotificationDropdown";
+import LoadingBar from "./components/LoadingBar";
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-900">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
@@ -27,9 +43,18 @@ const AppLayout: React.FC = () => {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      {/* Main content: offset by sidebar width on desktop */}
       <QuickAddFab />
+      <CommandPalette />
       <main className="flex-1 md:ml-[240px] pb-20 md:pb-0">
+        {/* Top bar with notifications */}
+        <div className="sticky top-0 z-30 bg-dark-900/80 backdrop-blur-xl border-b border-white/5">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-end gap-2">
+            <kbd className="hidden sm:inline text-[10px] text-muted bg-white/5 px-2 py-0.5 rounded border border-white/10">
+              Ctrl+K
+            </kbd>
+            <NotificationDropdown />
+          </div>
+        </div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
@@ -39,6 +64,10 @@ const AppLayout: React.FC = () => {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/suggestions" element={<SmartSuggestions />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/teams" element={<Teams />} />
+              <Route path="/teams/:id" element={<TeamDetail />} />
+              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AnimatePresence>
@@ -49,18 +78,24 @@ const AppLayout: React.FC = () => {
 };
 
 const AppRoutes: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   return (
     <Routes>
+      <Route path="/landing" element={user ? <Navigate to="/" replace /> : <Landing />} />
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/accept-invite/:token" element={<AcceptInvite />} />
       <Route
         path="/*"
         element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
+          !loading && !user ? (
+            <Landing />
+          ) : (
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          )
         }
       />
     </Routes>
