@@ -37,6 +37,7 @@ export interface PrioritySuggestion {
   task_id: number;
   task_name: string;
   suggested_priority: string;
+  reason: string;
   predicted_time: number;
   confidence: number;
   do_this: string;

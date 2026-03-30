@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { DataCacheProvider } from "./context/DataCache";
 import Sidebar from "./components/Sidebar";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -93,7 +94,9 @@ const AppRoutes: React.FC = () => {
             <Landing />
           ) : (
             <ProtectedRoute>
-              <AppLayout />
+              <DataCacheProvider>
+                <AppLayout />
+              </DataCacheProvider>
             </ProtectedRoute>
           )
         }

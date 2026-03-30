@@ -169,6 +169,15 @@ export const markAllRead = () =>
 export const getWeeklyDigest = () =>
   api.get<WeeklyDigest>("/ai/weekly-digest").then((r) => r.data);
 
+// ── Dashboard (combined endpoint) ────────────────────────────────────────
+export interface DashboardData {
+  tasks: Task[];
+  suggestions: PrioritySuggestion[];
+  digest: WeeklyDigest;
+}
+export const getDashboardData = () =>
+  api.get<DashboardData>("/dashboard").then((r) => r.data);
+
 // ── Admin ─────────────────────────────────────────────────────────────────
 export const adminGetStats = () =>
   api.get("/admin/stats").then((r) => r.data);

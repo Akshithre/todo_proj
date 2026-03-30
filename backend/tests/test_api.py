@@ -165,7 +165,9 @@ def test_suggestions():
     client.post("/tasks", json={"task_name": "Suggest me", "priority": "Low"}, headers=headers)
     response = client.get("/tasks/suggestions", headers=headers)
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    data = response.json()
+    assert "suggestions" in data
+    assert isinstance(data["suggestions"], list)
 
 
 def test_teams():

@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { BarChart2, TrendingUp, Brain, Calendar } from "lucide-react";
 import { Task } from "../types";
-import { getTasks } from "../services/api";
+import { useDataCache } from "../context/DataCache";
 import { SkeletonChart } from "../components/SkeletonLoader";
 import PageWrapper from "../components/PageWrapper";
 import toast from "react-hot-toast";
@@ -76,16 +76,19 @@ const Heatmap: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
 };
 
 const Analytics: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { tasks: cachedTasks, loadDashboard, loading: cacheLoading } = useDataCache();
+  const [tasks, setTasks] = useState<Task[]>(cachedTasks);
+  const [loading, setLoading] = useState(cachedTasks.length === 0);
   const [range, setRange] = useState<Range>("all");
 
   useEffect(() => {
-    getTasks()
-      .then(setTasks)
-      .catch(() => toast.error("Failed to load analytics"))
-      .finally(() => setLoading(false));
-  }, []);
+    if (cachedTasks.length > 0) {
+      setTasks(cachedTasks);
+      setLoading(false);
+    } else {
+      loadDashboard().then(() => setLoading(false));
+    }
+  }, [cachedTasks, loadDashboard]);
 
   const now = new Date();
   const rangeFilter = (t: Task) => {

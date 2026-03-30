@@ -2,49 +2,52 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Clock, TrendingUp, Brain, Loader2, ArrowRight } from "lucide-react";
 import { Task, PrioritySuggestion, TimePrediction } from "../types";
-import { getTasks, getSuggestions, predictTime, updateTask } from "../services/api";
+import { getSuggestions, predictTime, updateTask } from "../services/api";
 import { SkeletonCard } from "../components/SkeletonLoader";
 import PageWrapper from "../components/PageWrapper";
+import { useDataCache } from "../context/DataCache";
 import toast from "react-hot-toast";
 
 const SmartSuggestions: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [suggestions, setSuggestions] = useState<PrioritySuggestion[]>([]);
+  const { tasks, suggestions: cachedSuggestions, loadDashboard, invalidate } = useDataCache();
+  const [suggestions, setSuggestions] = useState<PrioritySuggestion[]>(cachedSuggestions);
   const [predictions, setPredictions] = useState<TimePrediction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(tasks.length === 0);
   const [predicting, setPredicting] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const t = await getTasks();
-      setTasks(t);
-      // Load suggestions independently
-      try {
-        const s = await getSuggestions();
-        setSuggestions(s);
-      } catch {
-        setSuggestions([]);
+  useEffect(() => {
+    const load = async () => {
+      // Use cached data if available, otherwise fetch
+      if (tasks.length === 0) {
+        setLoading(true);
+        await loadDashboard();
       }
-      // Auto-predict top pending tasks
-      const pending = t.filter((x) => x.status !== "Completed").slice(0, 5);
-      setPredicting(true);
-      const preds = await Promise.all(pending.map((p) => predictTime(p.task_id).catch(() => null)));
-      setPredictions(preds.filter(Boolean) as TimePrediction[]);
-      setPredicting(false);
-    } catch {
-      toast.error("Failed to load data");
-    }
-    setLoading(false);
-  };
+      setLoading(false);
+    };
+    load();
+  }, [loadDashboard, tasks.length]);
 
-  useEffect(() => { load(); }, []);
+  // When cached data arrives, update local state and predict
+  useEffect(() => {
+    setSuggestions(cachedSuggestions);
+  }, [cachedSuggestions]);
+
+  useEffect(() => {
+    if (tasks.length === 0) return;
+    const pending = tasks.filter((x) => x.status !== "Completed").slice(0, 5);
+    if (pending.length === 0) return;
+    setPredicting(true);
+    Promise.all(pending.map((p) => predictTime(p.task_id).catch(() => null)))
+      .then((preds) => setPredictions(preds.filter(Boolean) as TimePrediction[]))
+      .finally(() => setPredicting(false));
+  }, [tasks]);
 
   const applySuggestion = async (s: PrioritySuggestion) => {
     try {
       await updateTask(s.task_id, { priority: s.suggested_priority });
       toast.success(`Priority updated to ${s.suggested_priority}`);
       setSuggestions((prev) => prev.filter((x) => x.task_id !== s.task_id));
+      invalidate();
     } catch {
       toast.error("Failed to apply suggestion");
     }
@@ -54,7 +57,6 @@ const SmartSuggestions: React.FC = () => {
   const completed = tasks.filter((t) => t.status === "Completed");
   const score = tasks.length > 0 ? Math.round((completed.length / tasks.length) * 100) : 0;
 
-  // "What to work on" - top 3 by urgency
   const ranked = [...pending].sort((a, b) => {
     const pv: Record<string, number> = { High: 3, Medium: 2, Low: 1 };
     const pa = pv[a.priority] || 0;
@@ -176,7 +178,7 @@ const SmartSuggestions: React.FC = () => {
                   <p className="text-sm font-medium truncate">{s.task_name}</p>
                   <p className="text-xs text-muted mt-1 flex items-center gap-1">
                     Do this {s.do_this} <ArrowRight size={10} /> <span className="text-accent">{s.suggested_priority}</span>
-                    {" "}&mdash; {s.predicted_time}h ({Math.round(s.confidence * 100)}%)
+                    {" "}&mdash; {s.predicted_time}h ({Math.round(s.confidence * 100)}%) &middot; {s.reason}
                   </p>
                   <button
                     onClick={() => applySuggestion(s)}

@@ -11,7 +11,6 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
 
@@ -119,23 +118,8 @@ const Login: React.FC = () => {
               </button>
             </div>
 
-            {/* Remember me + Forgot password */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <div
-                  onClick={() => setRemember(!remember)}
-                  className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
-                    remember ? "bg-accent border-accent" : "border-muted/40 group-hover:border-muted"
-                  }`}
-                >
-                  {remember && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </div>
-                <span className="text-xs text-muted group-hover:text-white/70 transition-colors">Remember me</span>
-              </label>
+            {/* Forgot password */}
+            <div className="flex items-center justify-end">
               <button type="button" className="text-xs text-accent hover:underline">Forgot password?</button>
             </div>
 

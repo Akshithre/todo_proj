@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Clock, AlertTriangle, TrendingUp, Sparkles, ArrowRight, Brain } from "lucide-react";
+import { CheckCircle2, AlertTriangle, TrendingUp, Sparkles, ArrowRight, Brain } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Task, PrioritySuggestion, WeeklyDigest } from "../types";
-import { getTasks, getSuggestions, updateTask, getWeeklyDigest } from "../services/api";
+import { updateTask } from "../services/api";
 import { SkeletonStat, SkeletonCard } from "../components/SkeletonLoader";
 import AnimatedCounter from "../components/AnimatedCounter";
 import ProgressRing from "../components/ProgressRing";
 import PageWrapper from "../components/PageWrapper";
 import InitialsAvatar from "../components/InitialsAvatar";
 import { useAuth } from "../context/AuthContext";
+import { useDataCache } from "../context/DataCache";
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 import { formatDistanceToNow } from "date-fns";
@@ -22,33 +22,9 @@ const priorityColor: Record<string, string> = {
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [suggestions, setSuggestions] = useState<PrioritySuggestion[]>([]);
-  const [digest, setDigest] = useState<WeeklyDigest | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { tasks, suggestions, digest, loading, loadDashboard, invalidate } = useDataCache();
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const t = await getTasks();
-      setTasks(t);
-    } catch {
-      toast.error("Failed to load tasks");
-    }
-    try {
-      const s = await getSuggestions();
-      setSuggestions(s);
-    } catch {
-      setSuggestions([]);
-    }
-    try {
-      const d = await getWeeklyDigest();
-      setDigest(d);
-    } catch {}
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
   const total = tasks.length;
   const completed = tasks.filter((t) => t.status === "Completed").length;
@@ -68,7 +44,8 @@ const Dashboard: React.FC = () => {
       await updateTask(id, { status: "Completed" });
       confetti({ particleCount: 60, spread: 55, origin: { y: 0.7 } });
       toast.success("Task completed!");
-      load();
+      invalidate();
+      loadDashboard();
     } catch {
       toast.error("Failed to complete task");
     }
@@ -80,11 +57,13 @@ const Dashboard: React.FC = () => {
     { label: "Overdue", value: overdue, icon: AlertTriangle, color: "text-danger", glow: overdue > 0 ? "glow-danger" : "" },
   ];
 
+  const showSkeleton = loading && tasks.length === 0;
+
   return (
     <PageWrapper title={`Welcome back, ${user?.full_name?.split(" ")[0] || "User"}`} subtitle="Your command center">
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading
+        {showSkeleton
           ? Array.from({ length: 4 }).map((_, i) => <SkeletonStat key={i} />)
           : (
             <>
@@ -130,7 +109,7 @@ const Dashboard: React.FC = () => {
               View all <ArrowRight size={12} />
             </Link>
           </div>
-          {loading ? (
+          {showSkeleton ? (
             Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
           ) : priorityTasks.length === 0 ? (
             <div className="glass-card text-center text-muted py-10">
@@ -154,9 +133,7 @@ const Dashboard: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-sm truncate">{t.task_name}</p>
-                    {t.assignee_name && (
-                      <InitialsAvatar name={t.assignee_name} size="xs" />
-                    )}
+                    {t.assignee_name && <InitialsAvatar name={t.assignee_name} size="xs" />}
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted">
                     {t.deadline && (
@@ -165,9 +142,7 @@ const Dashboard: React.FC = () => {
                       </span>
                     )}
                     {t.category && <span>{t.category}</span>}
-                    {t.comment_count > 0 && (
-                      <span className="flex items-center gap-1">💬 {t.comment_count}</span>
-                    )}
+                    {t.comment_count > 0 && <span>💬 {t.comment_count}</span>}
                   </div>
                 </div>
                 <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${priorityColor[t.priority] || ""}`}>
@@ -187,7 +162,7 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="glass-card relative overflow-hidden animate-pulse-glow">
             <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent pointer-events-none" />
-            {loading ? (
+            {showSkeleton ? (
               <SkeletonCard />
             ) : suggestions.length === 0 ? (
               <div className="text-center text-muted py-6 relative z-10">
