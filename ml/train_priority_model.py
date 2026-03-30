@@ -1,81 +1,107 @@
 """
-Train a priority suggestion model based on past task patterns.
-Predicts what priority level a task should have based on features.
+Train a Random Forest classifier to predict task priority level.
+Downloads training data from Azure Blob Storage, preprocesses it,
+trains the model, and saves the artifact locally.
 """
 import os
 import io
+
 import joblib
 import pandas as pd
-import numpy as np
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.preprocessing import LabelEncoder
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "backend", ".env"))
 
-PRIORITY_MAP = {"High": 3, "Medium": 2, "Low": 1}
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "priority_model.pkl")
+ML_DIR = os.path.dirname(__file__)
 
+
+# ── Data loading ────────────────────────────────────────────────────
 
 def load_data_from_blob() -> pd.DataFrame:
+    """Download tasks_data.csv from Azure Blob Storage."""
     from azure.storage.blob import BlobServiceClient
 
     conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
     container = os.getenv("AZURE_STORAGE_CONTAINER", "tododata")
+    blob_name = "tasks_data.csv"
 
     blob_service = BlobServiceClient.from_connection_string(conn_str)
-    blob_client = blob_service.get_blob_client(container=container, blob="tasks_processed.csv")
+    blob_client = blob_service.get_blob_client(container=container, blob=blob_name)
     stream = blob_client.download_blob().readall()
     return pd.read_csv(io.BytesIO(stream))
 
 
 def load_data_local() -> pd.DataFrame:
-    np.random.seed(42)
-    n = 500
-    estimated = np.random.uniform(0.5, 10, size=n)
-    deadline_gap = np.random.uniform(1, 200, size=n)
-
-    # Heuristic labels: short deadline + long task → high priority
-    priority = np.where(
-        (deadline_gap < 48) & (estimated > 3), 3,
-        np.where(deadline_gap < 96, 2, 1),
+    """Fall back to local CSV if Azure is unavailable."""
+    local_path = os.path.join(ML_DIR, "tasks_data.csv")
+    if os.path.exists(local_path):
+        return pd.read_csv(local_path)
+    raise FileNotFoundError(
+        "No local tasks_data.csv found. Run generate_sample_data.py first."
     )
 
-    return pd.DataFrame({
-        "estimated_time": estimated,
-        "deadline_gap_hours": deadline_gap,
-        "priority_score": priority,
-    })
 
+# ── Preprocessing ───────────────────────────────────────────────────
+
+def preprocess(df: pd.DataFrame):
+    """Encode features and return X, y, and the fitted encoder."""
+    df = df.dropna(subset=["deadline_gap", "estimated_time", "category",
+                           "completion_rate", "priority"]).copy()
+
+    category_encoder = LabelEncoder()
+    df["category_encoded"] = category_encoder.fit_transform(df["category"])
+
+    features = ["deadline_gap", "estimated_time",
+                "category_encoded", "completion_rate"]
+    X = df[features]
+    y = df["priority"]
+
+    return X, y, category_encoder
+
+
+# ── Training ────────────────────────────────────────────────────────
 
 def train():
+    # Load data
     try:
         df = load_data_from_blob()
         print("Loaded data from Azure Blob Storage")
-        if "priority" in df.columns:
-            df["priority_score"] = df["priority"].map(PRIORITY_MAP).fillna(2)
-    except Exception:
-        print("Azure Blob not available — using synthetic data")
+    except Exception as e:
+        print(f"Azure Blob not available ({e}) — using local CSV")
         df = load_data_local()
 
-    features = ["estimated_time", "deadline_gap_hours"]
-    target = "priority_score"
+    print(f"Dataset size: {len(df)} rows")
 
-    df = df.dropna(subset=features + [target])
-    X = df[features]
-    y = df[target].astype(int)
+    # Preprocess
+    X, y, category_encoder = preprocess(df)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+    print(f"Train: {len(X_train)}  |  Test: {len(X_test)}")
 
-    model = GradientBoostingClassifier(n_estimators=100, random_state=42)
+    # Train
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
 
+    # Evaluate
     preds = model.predict(X_test)
+    acc = accuracy_score(y_test, preds)
+
+    print(f"\n--- Evaluation ---")
+    print(f"Accuracy: {acc:.4f}")
+    print(f"\nClassification Report:")
     print(classification_report(y_test, preds))
 
-    joblib.dump(model, MODEL_PATH)
-    print(f"Model saved to {MODEL_PATH}")
+    # Save model
+    model_path = os.path.join(ML_DIR, "priority_model.pkl")
+    joblib.dump(model, model_path)
+    print(f"Saved: {model_path}")
 
 
 if __name__ == "__main__":

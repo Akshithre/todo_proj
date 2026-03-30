@@ -36,15 +36,19 @@ export interface TaskCreate {
 export interface PrioritySuggestion {
   task_id: number;
   task_name: string;
-  current_priority: string;
   suggested_priority: string;
-  reason: string;
+  predicted_time: number;
+  confidence: number;
+  do_this: string;
 }
 
 export interface TimePrediction {
   task_id: number;
+  task_name: string;
   predicted_time: number;
   confidence: number;
+  your_estimate: number | null;
+  recommendation: string;
 }
 
 export interface User {

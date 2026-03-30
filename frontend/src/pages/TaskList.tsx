@@ -197,7 +197,7 @@ const TaskList: React.FC = () => {
               )}
               {pred && (
                 <span className="text-accent flex items-center gap-1">
-                  <Clock size={10} /> AI: {pred.predicted_time}h ({Math.round(pred.confidence * 100)}%)
+                  <Clock size={10} /> AI: {pred.predicted_time}h | {pred.recommendation}
                 </span>
               )}
               {t.comment_count > 0 && (

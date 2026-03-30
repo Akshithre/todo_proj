@@ -7,7 +7,7 @@ import {
 } from "../types";
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8001",
+  baseURL: process.env.REACT_APP_API_URL || `http://${window.location.hostname}:8001`,
 });
 
 // Attach JWT token to every request
@@ -77,7 +77,7 @@ export const bulkAssign = (task_ids: number[], assigned_to: number) =>
   api.post("/tasks/bulk-assign", task_ids, { params: { assigned_to } }).then((r) => r.data);
 
 export const getSuggestions = () =>
-  api.get<PrioritySuggestion[]>("/tasks/suggestions").then((r) => r.data);
+  api.get<{ suggestions: PrioritySuggestion[] }>("/tasks/suggestions").then((r) => r.data.suggestions);
 
 export const predictTime = (id: number) =>
   api.get<TimePrediction>(`/tasks/${id}/predict-time`).then((r) => r.data);

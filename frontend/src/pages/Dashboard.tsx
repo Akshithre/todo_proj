@@ -201,9 +201,9 @@ const Dashboard: React.FC = () => {
                   <div key={s.task_id} className="bg-white/5 rounded-xl p-3 border border-white/5">
                     <p className="font-medium text-sm">{s.task_name}</p>
                     <p className="text-xs text-muted mt-1">
-                      {s.current_priority} &rarr;{" "}
+                      Do this {s.do_this} &rarr;{" "}
                       <span className="text-accent font-medium">{s.suggested_priority}</span>
-                      {" "}&mdash; {s.reason}
+                      {" "}&mdash; {s.predicted_time}h (confidence: {Math.round(s.confidence * 100)}%)
                     </p>
                   </div>
                 ))}

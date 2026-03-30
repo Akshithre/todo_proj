@@ -102,7 +102,7 @@ const Register: React.FC<RegisterProps> = ({ prefillInviteToken }) => {
 
   const handleRegister = async () => {
     setLoading(true);
-    const ok = await register(
+    const result = await register(
       name,
       email,
       password,
@@ -110,11 +110,11 @@ const Register: React.FC<RegisterProps> = ({ prefillInviteToken }) => {
       orgMode === "invite" ? inviteToken : undefined
     );
     setLoading(false);
-    if (ok) {
+    if (result === true) {
       setDirection(1);
       setStep(2);
     } else {
-      toast.error("Registration failed. Email may already be in use.");
+      toast.error(result);
     }
   };
 

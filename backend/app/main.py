@@ -3,10 +3,11 @@ import re
 import json
 import uuid
 import joblib
+import httpx
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import List, Dict, Optional
+from typing import List, Optional, Dict
 from pathlib import Path
 
 from fastapi import FastAPI, Depends, HTTPException, Request, Query
@@ -33,7 +34,7 @@ from .schemas import (
     TeamMemberResponse, AddMemberRequest, UpdateMemberRoleRequest,
     # Task
     TaskCreate, TaskUpdate, TaskResponse,
-    TimePrediction, PrioritySuggestion,
+    TimePrediction, PrioritySuggestion, SuggestionsResponse,
     # Social
     CommentCreate, CommentUpdate, CommentResponse,
     ReactionCreate, ReactionResponse,
@@ -52,6 +53,9 @@ from .auth import (
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+AZURE_ML_ENDPOINT = os.getenv("AZURE_ML_ENDPOINT", "")
+AZURE_ML_KEY = os.getenv("AZURE_ML_KEY", "")
 
 
 def _seed_superadmin(db: Session):
@@ -85,7 +89,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Smart To-Do Task Optimizer", version="2.0.0", lifespan=lifespan)
 
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in origins],
@@ -100,6 +104,8 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error("Unhandled error on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
+
+# ── ML helpers ────────────────────────────────────────────────────────────────
 
 ML_DIR = Path(__file__).resolve().parent.parent.parent / "ml"
 _models: Dict[str, Optional[object]] = {}
@@ -123,6 +129,35 @@ def _get_model(name: str):
 def _priority_score(priority: str) -> int:
     return {"High": 3, "Medium": 2, "Low": 1}.get(priority, 2)
 
+
+def call_ml_endpoint(task_data: dict) -> dict:
+    """Send POST request to Azure ML endpoint and return prediction results."""
+    if not AZURE_ML_ENDPOINT or not AZURE_ML_KEY:
+        raise HTTPException(status_code=503, detail="ML endpoint not configured")
+
+    response = httpx.post(
+        AZURE_ML_ENDPOINT,
+        json=task_data,
+        headers={
+            "Authorization": f"Bearer {AZURE_ML_KEY}",
+            "Content-Type": "application/json",
+        },
+        timeout=30.0,
+    )
+
+    if response.status_code != 200:
+        logger.error("ML endpoint returned %s: %s", response.status_code, response.text)
+        raise HTTPException(status_code=502, detail="ML endpoint error")
+
+    data = response.json()
+    # Azure ML's run() returns json.dumps(result), so the response may be
+    # a JSON string that needs a second parse.
+    if isinstance(data, str):
+        data = json.loads(data)
+    return data
+
+
+# ── helpers ───────────────────────────────────────────────────────────────────
 
 def _hours_until_deadline(deadline: Optional[datetime]) -> float:
     if deadline is None:
@@ -628,8 +663,19 @@ def get_tasks(db: Session = Depends(get_db), user: User = Depends(get_optional_u
               archived: bool = Query(False)):
     q = db.query(Task)
 
-    if user and user.org_id:
-        q = q.filter((Task.org_id == user.org_id) | (Task.org_id == None))
+    if user:
+        if user.org_id:
+            # Show tasks in user's org OR personally owned tasks without an org
+            q = q.filter(
+                (Task.org_id == user.org_id) |
+                ((Task.org_id == None) & (Task.user_id == user.user_id))
+            )
+        else:
+            # User has no org — only show their own tasks
+            q = q.filter(Task.user_id == user.user_id)
+    else:
+        # No auth — show nothing (or only orphaned tasks with no user)
+        q = q.filter(Task.user_id == None, Task.org_id == None)
 
     if team_id:
         q = q.filter(Task.team_id == team_id)
@@ -644,43 +690,52 @@ def get_tasks(db: Session = Depends(get_db), user: User = Depends(get_optional_u
     return [_build_task_response(t, db, user.user_id if user else None) for t in tasks]
 
 
-@app.get("/tasks/suggestions", response_model=List[PrioritySuggestion])
+@app.get("/tasks/suggestions", response_model=SuggestionsResponse)
 def get_suggestions(db: Session = Depends(get_db), user: User = Depends(get_optional_user)):
     q = db.query(Task).filter(Task.status != "Completed")
-    if user and user.org_id:
-        q = q.filter((Task.org_id == user.org_id) | (Task.org_id == None))
-    tasks = q.all()
-    model = _get_model("priority_model.pkl")
-
-    suggestions: List[PrioritySuggestion] = []
-    for t in tasks:
-        if model:
-            try:
-                deadline_gap = _hours_until_deadline(t.deadline)
-                features = [[_priority_score(t.priority), t.estimated_time or 1, deadline_gap]]
-                pred = model.predict(features)[0]
-                suggested = {3: "High", 2: "Medium", 1: "Low"}.get(int(pred), t.priority)
-            except Exception:
-                suggested = t.priority
+    if user:
+        if user.org_id:
+            q = q.filter(
+                (Task.org_id == user.org_id) |
+                ((Task.org_id == None) & (Task.user_id == user.user_id))
+            )
         else:
-            hours_left = _hours_until_deadline(t.deadline)
-            if t.deadline:
-                if hours_left < 24:
-                    suggested = "High"
-                elif hours_left < 72:
-                    suggested = "Medium"
-                else:
-                    suggested = t.priority
-            else:
-                suggested = t.priority
+            q = q.filter(Task.user_id == user.user_id)
+    else:
+        q = q.filter(Task.user_id == None, Task.org_id == None)
+    tasks = q.all()
 
-        if suggested != t.priority:
-            reason = "Deadline approaching soon" if suggested == "High" else "Adjusted based on workload patterns"
-            suggestions.append(PrioritySuggestion(
-                task_id=t.task_id, task_name=t.task_name,
-                current_priority=t.priority, suggested_priority=suggested, reason=reason,
+    scored: list[PrioritySuggestion] = []
+    for t in tasks:
+        task_data = {
+            "priority": t.priority,
+            "category": t.category or "General",
+            "deadline_gap": _hours_until_deadline(t.deadline),
+            "estimated_time": t.estimated_time or 1.0,
+        }
+        try:
+            result = call_ml_endpoint(task_data)
+            scored.append(PrioritySuggestion(
+                task_id=t.task_id,
+                task_name=t.task_name,
+                suggested_priority=result["suggested_priority"],
+                predicted_time=result["predicted_completion_time"],
+                confidence=result["priority_confidence"],
+                do_this="",
             ))
-    return suggestions
+        except Exception as e:
+            logger.warning("ML prediction failed for task %s: %s", t.task_id, e)
+
+    # Sort by confidence descending, take top 5
+    scored.sort(key=lambda s: s.confidence, reverse=True)
+    top = scored[:5]
+
+    # Assign ordering labels
+    ordinals = ["first", "second", "third", "fourth", "fifth"]
+    for i, s in enumerate(top):
+        s.do_this = ordinals[i]
+
+    return SuggestionsResponse(suggestions=top)
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse)
@@ -688,6 +743,9 @@ def get_task(task_id: int, db: Session = Depends(get_db), user: User = Depends(g
     task = db.query(Task).filter(Task.task_id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    if user and task.user_id and task.user_id != user.user_id:
+        if not (user.org_id and task.org_id == user.org_id):
+            raise HTTPException(status_code=403, detail="Access denied")
     return _build_task_response(task, db, user.user_id if user else None)
 
 
@@ -697,6 +755,9 @@ def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db),
     db_task = db.query(Task).filter(Task.task_id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
+    if user and db_task.user_id and db_task.user_id != user.user_id:
+        if not (user.org_id and db_task.org_id == user.org_id):
+            raise HTTPException(status_code=403, detail="Access denied")
 
     old_status = db_task.status
     old_assigned = db_task.assigned_to
@@ -727,6 +788,9 @@ def delete_task(task_id: int, db: Session = Depends(get_db), user: User = Depend
     db_task = db.query(Task).filter(Task.task_id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
+    if user and db_task.user_id and db_task.user_id != user.user_id:
+        if not (user.org_id and db_task.org_id == user.org_id):
+            raise HTTPException(status_code=403, detail="Access denied")
     db.delete(db_task)
     db.commit()
     return {"detail": "Task deleted"}
@@ -778,16 +842,43 @@ def predict_time(task_id: int, db: Session = Depends(get_db)):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    model = _get_model("completion_model.pkl")
-    if model:
-        try:
-            deadline_gap = _hours_until_deadline(task.deadline)
-            features = [[_priority_score(task.priority), task.estimated_time or 1, deadline_gap]]
-            predicted = float(model.predict(features)[0])
-            return TimePrediction(task_id=task.task_id, predicted_time=round(predicted, 2), confidence=0.85)
-        except Exception:
-            pass
-    return TimePrediction(task_id=task.task_id, predicted_time=task.estimated_time or 1.0, confidence=0.5)
+    task_data = {
+        "priority": task.priority,
+        "category": task.category or "General",
+        "deadline_gap": _hours_until_deadline(task.deadline),
+        "estimated_time": task.estimated_time or 1.0,
+    }
+
+    try:
+        result = call_ml_endpoint(task_data)
+        return TimePrediction(
+            task_id=task.task_id,
+            task_name=task.task_name,
+            predicted_time=result["predicted_completion_time"],
+            confidence=result.get("confidence", 0.0),
+            your_estimate=task.estimated_time,
+            recommendation=result["recommendation"],
+        )
+    except Exception:
+        # Fallback to local model or estimate
+        model = _get_model("completion_model.pkl")
+        if model:
+            try:
+                deadline_gap = _hours_until_deadline(task.deadline)
+                features = [[_priority_score(task.priority), task.estimated_time or 1, deadline_gap]]
+                predicted = float(model.predict(features)[0])
+                return TimePrediction(
+                    task_id=task.task_id, task_name=task.task_name,
+                    predicted_time=round(predicted, 2), confidence=0.85,
+                    your_estimate=task.estimated_time, recommendation="Based on local ML model",
+                )
+            except Exception:
+                pass
+        return TimePrediction(
+            task_id=task.task_id, task_name=task.task_name,
+            predicted_time=task.estimated_time or 1.0, confidence=0.5,
+            your_estimate=task.estimated_time, recommendation="Based on your estimate",
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1041,7 +1132,12 @@ def weekly_digest(user: User = Depends(get_current_user), db: Session = Depends(
 
     q = db.query(Task)
     if user.org_id:
-        q = q.filter(Task.org_id == user.org_id)
+        q = q.filter(
+            (Task.org_id == user.org_id) |
+            ((Task.org_id == None) & (Task.user_id == user.user_id))
+        )
+    else:
+        q = q.filter(Task.user_id == user.user_id)
 
     completed_this_week = q.filter(Task.status == "Completed", Task.created_at >= week_ago).count()
     created_this_week = q.filter(Task.created_at >= week_ago).count()
@@ -1059,7 +1155,12 @@ def weekly_digest(user: User = Depends(get_current_user), db: Session = Depends(
         Task.status == "Completed", Task.created_at >= week_ago
     )
     if user.org_id:
-        contributors = contributors.filter(Task.org_id == user.org_id)
+        contributors = contributors.filter(
+            (Task.org_id == user.org_id) |
+            ((Task.org_id == None) & (Task.user_id == user.user_id))
+        )
+    else:
+        contributors = contributors.filter(Task.user_id == user.user_id)
     contributors = contributors.group_by(User.full_name).order_by(func.count(Task.task_id).desc()).limit(3).all()
 
     return {

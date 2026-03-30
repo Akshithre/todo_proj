@@ -1,0 +1,501 @@
+task_name,priority,category,deadline_gap,estimated_time,actual_time,status,completion_rate,created_at
+Prepare presentation,Low,Work,24,1.33,1.41,Completed,1.06,2025-11-12 19:26:08
+Study chapter,Low,Work,18,6.06,4.93,Completed,0.81,2025-12-21 09:29:47
+Organize files,High,Health,17,2.14,2.57,Completed,1.2,2026-01-17 10:47:23
+Update portfolio,High,Personal,9,3.87,5.05,Completed,1.3,2025-10-01 17:29:05
+Code review,Low,Work,9,3.67,3.31,Completed,0.9,2026-02-25 17:20:19
+Create dashboard,High,Work,12,3.35,4.43,Completed,1.32,2026-01-25 16:45:56
+Plan meeting,Low,Study,4,3.95,7.76,Completed,1.96,2025-12-12 23:17:47
+Attend webinar,Low,Work,28,5.14,6.01,Completed,1.17,2025-11-06 19:19:41
+Submit assignment,High,Work,25,5.46,5.7,Completed,1.04,2025-10-15 23:03:21
+Write blog post,Medium,Study,21,2.58,3.79,Completed,1.47,2025-11-01 01:13:16
+Update resume,High,Personal,23,5.53,7.57,Completed,1.37,2026-02-03 07:15:43
+Book appointment,Low,Personal,6,5.97,7.77,Completed,1.3,2025-11-21 21:14:46
+Study chapter,Low,Study,25,2.93,5.01,Completed,1.71,2025-11-13 22:38:22
+Attend webinar,Medium,Study,7,2.51,3.84,Completed,1.53,2026-01-18 14:26:56
+Weekly review,High,Personal,13,5.42,7.28,Completed,1.34,2026-02-02 07:06:18
+Review analytics,Medium,Health,24,1.55,1.94,Completed,1.25,2025-11-20 11:39:46
+Optimize query,Low,Health,8,3.5,6.99,Completed,2.0,2025-10-27 07:52:15
+Write unit tests,High,Health,28,6.17,5.89,Completed,0.95,2026-01-30 07:18:31
+Setup CI pipeline,Low,Study,13,0.98,1.45,Completed,1.48,2025-12-30 08:28:08
+Water plants,Low,Study,1,6.96,11.03,Completed,1.58,2025-10-22 17:02:53
+Write report,Low,Study,10,3.05,3.86,Completed,1.27,2025-12-27 13:42:14
+Book appointment,Low,Study,17,6.21,11.71,Completed,1.89,2026-03-18 12:06:32
+Write unit tests,Low,Work,7,4.31,3.87,Completed,0.9,2026-02-25 12:45:22
+Meditate,Low,Personal,1,2.93,2.48,Completed,0.85,2025-12-09 22:48:40
+Sketch wireframe,High,Health,19,2.31,3.17,Completed,1.37,2025-10-17 02:22:20
+Backup photos,High,Health,18,7.83,10.05,Completed,1.28,2025-10-25 09:32:45
+Call client,Low,Personal,17,1.74,3.19,Completed,1.83,2025-12-21 15:09:50
+Setup CI pipeline,Low,Health,22,2.84,4.39,Completed,1.55,2025-12-24 12:53:33
+Plan sprint,High,Personal,3,2.36,2.52,Completed,1.07,2026-01-22 16:54:56
+Submit assignment,Low,Work,3,2.15,3.48,Completed,1.62,2025-10-11 21:34:11
+Backup photos,High,Health,3,6.95,8.04,Completed,1.16,2025-11-23 12:59:47
+Write API docs,High,Health,24,4.54,6.21,Completed,1.37,2026-01-19 08:27:07
+Review PR,High,Health,26,6.38,7.04,Completed,1.1,2025-10-18 18:47:18
+Water plants,Medium,Work,15,3.68,5.49,Completed,1.49,2025-10-10 23:39:15
+Refactor module,High,Personal,11,3.52,4.58,Completed,1.3,2025-10-21 16:25:44
+Weekly review,High,Personal,5,4.52,5.02,Completed,1.11,2025-11-23 13:18:46
+Fix login bug,High,Work,28,3.82,5.07,Completed,1.33,2025-10-19 11:29:09
+Draft proposal,High,Health,28,7.45,7.59,Completed,1.02,2025-12-18 09:13:30
+Write report,High,Health,29,6.98,6.49,Completed,0.93,2025-12-13 01:20:27
+Pay bills,Medium,Health,26,7.45,8.67,Completed,1.16,2025-12-21 14:33:21
+Review analytics,High,Work,7,1.92,2.66,Completed,1.39,2026-01-20 22:22:26
+Setup CI pipeline,Low,Personal,2,2.85,4.16,Completed,1.46,2026-01-06 02:39:03
+Meal prep,High,Work,3,7.71,10.22,Completed,1.33,2025-10-13 18:31:51
+Write API docs,Low,Personal,13,6.96,5.96,Completed,0.86,2026-03-22 08:14:16
+Gym session,Low,Study,20,4.96,4.0,Completed,0.81,2026-02-05 02:46:45
+Update dependencies,Medium,Personal,23,2.03,2.13,Completed,1.05,2025-11-21 01:03:06
+Update resume,Low,Work,15,5.34,5.93,Completed,1.11,2026-02-23 11:08:26
+Run benchmarks,Medium,Personal,19,5.16,8.24,Completed,1.6,2025-10-14 16:37:04
+Refactor module,Low,Study,30,2.49,2.87,Completed,1.15,2025-10-13 19:47:20
+Track expenses,Medium,Work,27,1.68,2.07,Completed,1.23,2025-11-28 05:01:49
+Prepare presentation,Low,Study,10,6.63,12.67,Completed,1.91,2025-10-20 13:56:47
+Morning workout,High,Personal,24,7.17,8.44,Completed,1.18,2025-11-22 08:25:58
+Optimize query,Low,Health,22,3.07,4.68,Completed,1.52,2025-11-20 17:27:08
+Clean inbox,Medium,Study,28,7.29,6.13,Completed,0.84,2026-01-31 15:10:41
+Write unit tests,High,Health,25,0.53,0.51,Completed,0.96,2025-11-20 07:59:54
+Pay bills,Low,Personal,18,5.79,4.13,Completed,0.71,2025-10-15 01:51:36
+Clean inbox,Low,Personal,12,0.77,1.12,Completed,1.45,2025-10-29 05:21:55
+Study chapter,High,Study,29,2.81,3.84,Completed,1.37,2026-03-16 14:21:47
+Plan sprint,High,Health,22,5.62,5.35,Completed,0.95,2026-02-28 22:48:12
+Write unit tests,Low,Personal,30,6.12,11.68,Completed,1.91,2026-03-17 08:33:10
+Research tools,Medium,Personal,24,0.69,1.06,Completed,1.54,2026-03-01 09:23:01
+Study chapter,Medium,Health,23,1.69,1.5,Completed,0.89,2026-03-18 19:47:24
+Submit assignment,High,Personal,30,2.0,2.26,Completed,1.13,2025-11-28 17:29:27
+Update resume,High,Study,13,5.45,5.8,Completed,1.06,2026-03-17 07:22:30
+Run benchmarks,Medium,Study,13,5.31,7.13,Completed,1.34,2026-03-13 06:56:39
+Study chapter,High,Work,9,1.37,1.36,Completed,0.99,2025-11-21 00:21:40
+Meal prep,Low,Work,24,3.76,6.48,Completed,1.72,2025-12-24 04:56:28
+Clean inbox,Medium,Work,7,7.25,7.28,Completed,1.0,2026-02-15 02:22:37
+Review analytics,Low,Personal,18,7.44,11.85,Completed,1.59,2026-02-21 12:56:10
+Team standup,Medium,Work,22,3.73,5.73,Completed,1.54,2026-01-29 11:18:46
+Team standup,Low,Health,17,7.25,7.99,Completed,1.1,2025-12-18 18:26:50
+Schedule interview,Low,Personal,5,2.72,2.58,Completed,0.95,2026-02-06 13:59:38
+Meditate,Low,Study,13,4.77,6.74,Completed,1.41,2025-09-30 13:05:24
+Weekly review,High,Health,19,3.72,4.48,Completed,1.2,2025-12-02 00:59:18
+Review analytics,Medium,Personal,17,5.57,6.56,Completed,1.18,2026-03-24 11:00:19
+Code review,Low,Work,17,1.14,1.78,Completed,1.56,2026-01-28 17:09:46
+Send emails,High,Work,8,5.55,7.23,Completed,1.3,2025-10-29 01:55:03
+Weekly review,High,Health,20,7.88,10.44,Completed,1.32,2025-10-14 14:36:08
+Update dependencies,Low,Personal,23,4.82,7.74,Completed,1.61,2026-01-04 11:09:46
+File taxes,High,Work,1,5.42,7.3,Completed,1.35,2026-03-16 13:08:31
+Weekly review,Medium,Work,26,2.14,3.35,Completed,1.57,2026-01-09 01:03:23
+Weekly review,Low,Study,28,2.37,2.03,Completed,0.86,2025-10-26 08:36:12
+Plan sprint,Medium,Health,24,5.09,7.7,Completed,1.51,2025-12-22 07:57:15
+Refactor module,High,Study,16,6.08,6.84,Completed,1.12,2026-02-23 10:43:55
+Attend webinar,Low,Study,8,4.13,4.37,Completed,1.06,2025-10-15 12:17:48
+Prepare presentation,High,Personal,11,2.54,3.42,Completed,1.35,2025-10-16 02:43:02
+Research tools,High,Health,5,3.37,4.22,Completed,1.25,2025-10-12 22:31:35
+Research tools,Medium,Health,14,4.57,3.88,Completed,0.85,2026-03-11 04:45:09
+Write API docs,Low,Health,1,7.6,13.78,Completed,1.81,2026-02-26 03:07:39
+Research tools,Medium,Personal,12,0.54,0.56,Completed,1.04,2025-12-15 04:40:04
+Code review,Medium,Health,14,2.15,2.56,Completed,1.19,2025-12-14 23:24:15
+Run benchmarks,Low,Work,15,1.74,3.3,Completed,1.9,2026-01-29 07:07:33
+Clean inbox,Medium,Personal,22,4.94,4.06,Completed,0.82,2026-02-02 06:37:43
+Weekly review,Medium,Study,9,1.86,2.05,Completed,1.1,2025-11-10 13:36:24
+Research tools,Medium,Study,13,6.21,6.35,Completed,1.02,2026-03-11 00:14:47
+Submit assignment,High,Work,24,4.03,4.71,Completed,1.17,2025-12-07 10:07:54
+Send emails,Low,Personal,1,0.8,1.55,Completed,1.94,2025-11-08 04:17:11
+Weekly review,High,Study,22,1.45,1.39,Completed,0.96,2025-11-11 18:59:12
+Design mockup,Medium,Personal,20,1.76,2.76,Completed,1.57,2026-02-16 22:59:08
+Water plants,Medium,Health,1,1.31,2.02,Completed,1.54,2026-01-20 06:36:20
+Book appointment,Medium,Personal,7,7.56,6.51,Completed,0.86,2026-02-11 13:41:41
+Design mockup,High,Work,10,5.73,7.59,Completed,1.32,2026-01-25 01:19:09
+Learn new framework,Medium,Study,22,4.5,4.93,Completed,1.1,2026-01-06 17:08:47
+Write blog post,High,Health,27,6.87,7.87,Completed,1.15,2025-12-23 15:33:49
+Grocery shopping,Low,Health,6,1.65,2.73,Completed,1.65,2026-02-03 18:32:58
+Refactor module,Medium,Work,24,3.77,4.8,Completed,1.27,2025-12-02 01:14:47
+Track expenses,Medium,Health,8,7.11,9.96,Completed,1.4,2026-01-19 02:53:24
+Call client,Medium,Study,28,0.72,0.76,Completed,1.06,2026-01-03 03:20:44
+Grocery shopping,Medium,Work,29,3.05,3.89,Completed,1.28,2026-03-20 08:47:45
+Draft proposal,Low,Personal,3,7.61,7.71,Completed,1.01,2025-12-18 09:17:26
+Send emails,Low,Work,23,4.07,5.45,Completed,1.34,2026-03-03 10:32:00
+Gym session,Medium,Study,23,2.16,2.15,Completed,1.0,2026-02-06 09:28:34
+Plan sprint,Medium,Study,12,4.65,5.3,Completed,1.14,2026-02-22 07:30:33
+Design mockup,Medium,Personal,9,5.77,6.03,Completed,1.05,2025-11-14 05:35:00
+Read documentation,Medium,Personal,18,1.4,2.18,Completed,1.56,2026-02-11 11:35:37
+Setup CI pipeline,High,Study,9,6.04,7.62,Completed,1.26,2026-02-25 02:01:26
+Meditate,High,Work,10,6.74,6.83,Completed,1.01,2025-11-04 07:27:23
+Plan sprint,Low,Study,9,4.51,3.42,Completed,0.76,2025-10-11 01:18:28
+Review PR,Low,Work,21,7.58,13.86,Completed,1.83,2026-01-03 18:51:31
+Fix login bug,Low,Study,16,2.63,3.35,Completed,1.27,2025-11-05 06:23:43
+Write API docs,Medium,Work,3,1.36,1.52,Completed,1.12,2025-10-14 20:26:46
+Refactor module,High,Work,19,1.62,2.23,Completed,1.38,2025-10-17 00:10:12
+Submit assignment,Low,Health,20,6.23,9.19,Completed,1.48,2026-01-28 13:14:12
+Meditate,Medium,Work,10,7.31,10.88,Completed,1.49,2025-12-22 17:41:24
+Book appointment,Low,Personal,4,7.7,14.88,Completed,1.93,2025-11-09 19:33:36
+Update resume,Medium,Personal,6,5.45,5.41,Completed,0.99,2026-01-15 15:40:07
+Study chapter,High,Personal,23,3.56,4.26,Completed,1.2,2025-11-26 00:33:54
+Water plants,Medium,Personal,23,5.8,8.63,Completed,1.49,2025-10-14 06:55:12
+Organize files,Medium,Health,21,6.41,8.15,Completed,1.27,2026-03-05 13:40:13
+Debug API,High,Work,21,4.58,4.46,Completed,0.97,2025-11-21 01:08:07
+Write API docs,High,Study,10,1.74,2.08,Completed,1.2,2026-03-09 12:26:11
+Grocery shopping,Medium,Health,23,1.43,1.49,Completed,1.04,2025-12-17 15:01:26
+Team standup,Medium,Study,2,1.1,1.66,Completed,1.51,2026-02-20 02:22:28
+Gym session,High,Work,22,1.18,1.56,Completed,1.32,2026-01-20 03:49:13
+Read documentation,Low,Health,19,6.66,5.01,Completed,0.75,2026-02-24 07:39:59
+Clean inbox,Low,Health,30,5.39,5.72,Completed,1.06,2026-01-22 03:01:55
+Review PR,High,Personal,14,4.03,4.3,Completed,1.07,2026-02-07 14:14:48
+Update portfolio,Medium,Work,16,3.59,3.7,Completed,1.03,2025-12-17 05:26:27
+Update dependencies,Medium,Work,9,1.16,1.23,Completed,1.06,2026-02-27 11:31:57
+Setup CI pipeline,Low,Study,15,7.02,8.69,Completed,1.24,2025-11-05 21:23:46
+Call client,Low,Study,21,6.17,7.86,Completed,1.27,2025-10-10 11:43:35
+Draft proposal,Low,Work,10,1.48,1.88,Completed,1.27,2026-02-13 01:16:45
+Write unit tests,High,Study,20,7.8,10.14,Completed,1.3,2026-02-15 07:01:33
+Design mockup,Low,Health,14,0.6,0.49,Completed,0.82,2026-03-12 20:25:58
+Morning workout,High,Study,5,5.36,6.16,Completed,1.15,2026-02-16 14:48:42
+Debug API,Medium,Health,16,6.76,6.73,Completed,1.0,2026-01-15 12:16:47
+Update resume,High,Study,17,7.41,9.43,Completed,1.27,2025-10-26 23:22:23
+Write report,Medium,Study,26,3.05,3.68,Completed,1.21,2026-03-08 19:14:09
+Draft proposal,Low,Personal,19,2.74,3.98,Completed,1.45,2026-02-05 14:44:42
+Run benchmarks,Medium,Health,12,4.54,4.84,Completed,1.07,2026-02-25 14:26:33
+Refactor module,Medium,Health,28,7.5,7.13,Completed,0.95,2026-02-12 21:46:35
+Deploy to staging,High,Health,14,6.92,6.38,Completed,0.92,2026-02-22 01:46:33
+Draft proposal,Medium,Work,26,7.91,11.52,Completed,1.46,2025-10-30 00:03:37
+Practice coding,High,Work,19,4.27,4.55,Completed,1.07,2025-10-19 22:55:52
+Learn new framework,Low,Personal,1,7.33,12.02,Completed,1.64,2025-12-19 01:50:13
+Update dependencies,High,Work,9,4.02,4.3,Completed,1.07,2026-02-11 23:26:08
+Book appointment,Medium,Health,28,6.89,8.45,Completed,1.23,2025-11-30 22:56:46
+Morning workout,Low,Personal,3,0.77,0.77,Completed,1.0,2026-02-10 08:43:53
+Review PR,Low,Health,4,1.18,1.99,Completed,1.69,2026-02-14 03:34:02
+Fix login bug,High,Study,29,5.71,5.22,Completed,0.91,2025-12-02 10:53:37
+Write API docs,Medium,Personal,5,3.31,3.29,Completed,0.99,2025-12-19 11:29:55
+Water plants,High,Personal,20,1.81,2.42,Completed,1.34,2026-01-28 19:15:28
+Create dashboard,Medium,Health,5,7.35,7.25,Completed,0.99,2026-02-01 08:02:57
+Morning workout,Medium,Personal,29,5.5,7.94,Completed,1.44,2026-03-24 11:08:19
+Book appointment,High,Health,12,3.81,5.31,Completed,1.39,2025-11-27 13:21:29
+Deploy to staging,Low,Work,28,2.38,2.6,Completed,1.09,2025-12-14 03:59:55
+Morning workout,High,Work,12,3.36,3.99,Completed,1.19,2026-02-13 06:04:30
+File taxes,Low,Work,1,3.47,4.98,Completed,1.44,2026-02-10 15:15:20
+File taxes,Low,Personal,27,6.09,11.42,Completed,1.88,2025-11-25 00:57:35
+Create dashboard,Low,Personal,8,6.51,9.94,Completed,1.53,2026-01-29 00:45:39
+Practice coding,Low,Work,21,1.23,1.89,Completed,1.54,2025-11-29 10:55:47
+Team standup,Low,Health,5,3.24,2.65,Completed,0.82,2025-11-26 18:30:45
+Setup CI pipeline,High,Study,26,2.01,2.35,Completed,1.17,2025-12-10 12:13:04
+Morning workout,High,Study,27,2.43,3.33,Completed,1.37,2026-03-06 01:42:25
+Water plants,High,Health,3,4.01,3.89,Completed,0.97,2025-11-13 06:38:20
+Run benchmarks,Low,Work,26,3.24,3.93,Completed,1.21,2025-11-20 19:39:52
+Schedule interview,Medium,Study,24,3.26,4.36,Completed,1.34,2026-01-21 23:26:44
+Plan sprint,High,Study,16,5.56,5.07,Completed,0.91,2026-03-21 04:01:52
+Pay bills,Low,Study,3,2.16,3.3,Completed,1.53,2025-12-29 14:50:30
+Meditate,Low,Health,5,3.56,2.7,Completed,0.76,2025-10-07 16:37:09
+Weekly review,High,Study,29,1.23,1.44,Completed,1.17,2025-12-14 22:25:09
+Gym session,Low,Personal,23,7.62,14.7,Completed,1.93,2025-12-20 20:28:14
+Grocery shopping,Medium,Work,27,5.41,6.45,Completed,1.19,2025-12-18 17:09:22
+Write blog post,Low,Work,15,3.28,4.19,Completed,1.28,2025-11-15 07:33:46
+Fix login bug,Low,Health,29,3.26,6.43,Completed,1.97,2025-12-09 02:44:22
+Weekly review,Medium,Work,4,1.92,2.99,Completed,1.56,2026-03-09 12:12:25
+Fix login bug,Low,Study,21,2.09,3.09,Completed,1.48,2025-10-04 14:43:52
+Update portfolio,High,Personal,26,7.92,9.36,Completed,1.18,2025-10-13 18:56:41
+Debug API,Low,Work,28,2.12,2.13,Completed,1.0,2026-02-27 20:01:02
+Create dashboard,Medium,Personal,5,6.94,11.03,Completed,1.59,2026-01-13 08:47:05
+Refactor module,High,Study,1,5.46,5.27,Completed,0.97,2025-12-09 00:43:42
+Setup CI pipeline,High,Work,2,1.81,1.74,Completed,0.96,2025-12-21 05:01:00
+Gym session,Low,Work,15,0.98,1.68,Completed,1.71,2026-01-08 03:03:38
+Backup photos,Medium,Study,20,4.28,3.57,Completed,0.83,2026-03-01 13:18:02
+Update dependencies,Medium,Health,1,5.33,4.52,Completed,0.85,2026-01-01 11:24:56
+Plan meeting,Low,Study,23,1.31,2.47,Completed,1.89,2025-10-14 17:41:23
+Gym session,Low,Study,5,1.61,1.7,Completed,1.06,2026-01-31 09:32:58
+Meal prep,Medium,Health,17,7.96,8.25,Completed,1.04,2026-01-06 15:14:13
+File taxes,High,Personal,4,6.45,8.56,Completed,1.33,2026-02-03 20:41:23
+Weekly review,Medium,Health,8,3.89,4.4,Completed,1.13,2026-03-10 03:15:05
+Create dashboard,Medium,Study,11,5.97,6.81,Completed,1.14,2026-02-06 14:49:32
+Plan meeting,High,Work,16,5.65,5.27,Completed,0.93,2026-03-10 23:32:10
+Plan sprint,Medium,Work,24,1.22,1.34,Completed,1.1,2025-10-25 17:34:49
+Research tools,Low,Study,18,7.67,8.66,Completed,1.13,2025-10-24 04:50:14
+Fix login bug,Low,Study,14,7.56,13.82,Completed,1.83,2026-02-17 11:35:04
+Debug API,Low,Health,4,2.84,4.12,Completed,1.45,2025-11-10 18:37:58
+Design mockup,High,Study,12,6.85,9.06,Completed,1.32,2025-12-10 20:09:25
+Track expenses,Low,Work,14,2.2,3.96,Completed,1.8,2026-02-26 11:41:35
+Read documentation,Low,Study,27,7.47,11.96,Completed,1.6,2025-10-06 02:07:47
+Read documentation,Low,Personal,30,6.22,7.1,Completed,1.14,2025-10-01 15:39:12
+Send emails,Low,Work,3,5.43,4.8,Completed,0.88,2026-01-31 09:59:37
+Write unit tests,Low,Study,13,4.48,5.58,Completed,1.25,2025-12-05 15:53:19
+Plan meeting,Medium,Work,25,5.91,9.18,Completed,1.55,2026-01-24 05:48:09
+Grocery shopping,High,Health,20,1.68,1.55,Completed,0.92,2025-10-16 07:23:44
+Call client,Low,Work,20,3.68,4.69,Completed,1.27,2025-11-22 12:14:53
+Draft proposal,Medium,Study,10,3.72,4.99,Completed,1.34,2026-01-23 15:24:15
+Meditate,High,Personal,20,2.15,1.99,Completed,0.93,2025-11-09 03:52:44
+Draft proposal,High,Health,10,6.23,6.63,Completed,1.06,2025-10-01 23:13:20
+Plan sprint,High,Study,18,1.47,1.84,Completed,1.25,2026-01-05 14:35:23
+Weekly review,High,Work,24,3.48,3.21,Completed,0.92,2025-10-04 02:32:24
+Research tools,Medium,Study,19,4.82,5.42,Completed,1.12,2026-02-01 18:28:29
+Weekly review,High,Study,11,3.54,3.49,Completed,0.99,2026-01-28 11:52:15
+Update dependencies,High,Work,4,3.78,3.86,Completed,1.02,2026-01-22 19:32:14
+File taxes,Medium,Personal,24,7.03,7.53,Completed,1.07,2025-12-04 03:24:38
+File taxes,High,Study,4,4.33,5.05,Completed,1.17,2025-11-07 02:51:18
+Refactor module,Medium,Work,27,5.96,7.85,Completed,1.32,2025-10-29 03:28:58
+Update portfolio,High,Work,6,2.42,2.91,Completed,1.2,2026-02-25 02:03:30
+Write API docs,High,Health,21,7.63,8.75,Completed,1.15,2026-02-23 23:10:14
+Team standup,Low,Study,19,7.43,11.41,Completed,1.54,2026-01-29 17:40:50
+Grocery shopping,High,Work,16,3.8,4.26,Completed,1.12,2025-11-28 06:26:37
+Fix login bug,Medium,Study,10,4.31,5.04,Completed,1.17,2025-10-07 18:27:38
+Track expenses,Medium,Health,28,1.08,1.71,Completed,1.58,2025-10-18 00:00:37
+Practice coding,Medium,Personal,26,4.85,6.75,Completed,1.39,2025-10-08 10:22:40
+Practice coding,Medium,Work,17,5.04,4.64,Completed,0.92,2025-10-12 11:33:02
+Study chapter,Medium,Personal,3,7.87,9.47,Completed,1.2,2025-11-02 23:22:52
+Write unit tests,Low,Study,15,3.78,5.22,Completed,1.38,2026-01-26 21:05:51
+Water plants,Medium,Work,13,7.38,8.32,Completed,1.13,2025-12-05 04:06:12
+Water plants,Low,Health,3,5.35,6.04,Completed,1.13,2026-01-16 19:29:43
+Meal prep,Medium,Personal,28,2.39,3.17,Completed,1.33,2026-03-25 11:03:41
+Meditate,Medium,Health,22,1.11,1.01,Completed,0.91,2025-12-07 09:28:52
+Learn new framework,High,Study,3,4.96,5.23,Completed,1.05,2025-12-12 14:39:04
+Setup CI pipeline,High,Work,27,5.53,7.6,Completed,1.37,2026-02-10 13:27:40
+Meditate,Low,Personal,17,5.53,6.47,Completed,1.17,2025-12-09 21:01:33
+Prepare presentation,High,Personal,25,3.06,3.5,Completed,1.14,2025-11-13 10:57:55
+Run benchmarks,High,Work,26,2.72,2.59,Completed,0.95,2026-02-27 03:44:05
+Schedule interview,Low,Personal,25,3.03,4.56,Completed,1.5,2026-01-24 10:34:06
+Write unit tests,High,Health,23,1.86,2.39,Completed,1.28,2026-03-06 13:36:55
+Track expenses,High,Study,22,3.58,4.51,Completed,1.26,2025-12-25 17:18:51
+Deploy to staging,Low,Personal,8,6.38,8.9,Completed,1.39,2025-11-29 13:25:23
+File taxes,Medium,Study,19,5.59,8.87,Completed,1.59,2025-12-29 02:46:58
+Organize files,Medium,Personal,14,4.27,6.72,Completed,1.57,2026-03-08 02:11:14
+Review PR,Medium,Work,16,0.89,1.33,Completed,1.49,2026-01-16 03:32:43
+Optimize query,Medium,Personal,6,1.13,1.15,Completed,1.02,2026-03-25 06:13:51
+Database backup,Medium,Work,30,1.19,1.16,Completed,0.97,2025-12-27 01:36:25
+Plan meeting,Medium,Study,17,0.9,0.99,Completed,1.1,2025-12-14 10:51:46
+Learn new framework,High,Study,30,0.71,0.67,Completed,0.94,2026-02-16 05:57:41
+Pay bills,High,Personal,10,1.53,2.08,Completed,1.36,2025-12-31 04:59:52
+Send emails,Low,Study,20,4.02,2.84,Completed,0.71,2025-10-15 20:25:01
+Setup CI pipeline,High,Health,18,6.76,9.26,Completed,1.37,2026-01-26 16:47:06
+Refactor module,High,Health,8,6.32,6.64,Completed,1.05,2025-10-09 17:43:36
+Draft proposal,Low,Work,15,6.45,5.04,Completed,0.78,2026-03-11 22:26:44
+Clean inbox,Low,Work,8,4.37,7.14,Completed,1.63,2025-11-26 00:37:27
+Backup photos,Low,Work,19,3.15,3.91,Completed,1.24,2026-02-06 11:23:34
+Optimize query,Low,Work,3,7.81,15.15,Completed,1.94,2026-01-14 02:48:14
+Create dashboard,Medium,Work,2,7.05,9.23,Completed,1.31,2025-12-11 22:54:48
+Book appointment,Medium,Work,12,6.41,6.36,Completed,0.99,2026-02-05 01:31:36
+Run benchmarks,Low,Study,11,6.01,5.25,Completed,0.87,2025-12-07 21:01:51
+Deploy to staging,Low,Personal,25,1.81,2.88,Completed,1.59,2026-02-12 11:56:49
+Morning workout,High,Personal,25,0.97,1.33,Completed,1.37,2025-10-07 15:33:19
+Optimize query,High,Health,29,6.43,5.92,Completed,0.92,2025-11-29 16:15:24
+Morning workout,Low,Study,2,4.05,6.8,Completed,1.68,2025-11-06 13:48:17
+Write blog post,High,Health,11,6.99,7.25,Completed,1.04,2026-03-04 16:24:14
+Read documentation,Medium,Health,29,6.07,9.5,Completed,1.57,2025-12-05 07:13:24
+Plan meeting,Low,Health,30,4.23,7.35,Completed,1.74,2025-11-21 06:12:24
+Team standup,High,Work,27,3.73,3.69,Completed,0.99,2025-11-26 12:14:56
+Attend webinar,High,Health,10,2.96,3.12,Completed,1.05,2026-01-25 11:37:07
+Database backup,High,Health,12,5.67,6.37,Completed,1.12,2026-02-18 14:23:56
+Backup photos,Medium,Health,26,5.3,8.26,Completed,1.56,2025-10-15 00:54:55
+Debug API,Medium,Health,24,4.35,5.84,Completed,1.34,2025-10-06 12:19:26
+Write blog post,High,Health,8,1.45,1.87,Completed,1.29,2025-12-10 14:24:45
+Write blog post,Low,Health,5,0.74,1.17,Completed,1.58,2025-12-11 12:01:05
+Learn new framework,High,Study,17,4.8,5.2,Completed,1.08,2025-11-30 12:20:26
+Setup CI pipeline,High,Health,1,7.7,9.76,Completed,1.27,2026-01-05 08:54:42
+Call client,Low,Study,25,1.38,1.43,Completed,1.04,2025-12-26 02:58:54
+Update resume,Low,Health,16,7.37,7.08,Completed,0.96,2025-10-26 19:44:18
+Water plants,High,Study,15,7.24,10.13,Completed,1.4,2026-03-06 20:27:49
+Meditate,Low,Personal,3,3.11,4.4,Completed,1.41,2025-11-25 20:23:04
+Write blog post,Low,Personal,23,5.82,8.9,Completed,1.53,2026-03-03 14:05:29
+Draft proposal,High,Work,26,7.89,7.65,Completed,0.97,2026-03-02 22:36:13
+Prepare presentation,Medium,Work,12,4.66,5.47,Completed,1.17,2026-01-15 14:03:33
+Research tools,High,Health,23,2.82,3.55,Completed,1.26,2026-01-10 13:07:03
+Weekly review,Low,Study,11,1.05,1.61,Completed,1.53,2025-12-26 20:13:53
+Read documentation,High,Personal,25,7.08,8.32,Completed,1.18,2026-01-22 14:28:46
+Setup CI pipeline,Medium,Personal,28,4.27,3.61,Completed,0.85,2025-10-24 13:49:51
+Database backup,Medium,Study,11,1.73,2.68,Completed,1.55,2025-11-13 05:57:57
+Prepare presentation,High,Study,21,2.38,3.28,Completed,1.38,2025-11-22 18:13:58
+Gym session,Low,Personal,17,4.5,6.9,Completed,1.53,2026-01-23 09:13:32
+Write API docs,High,Work,24,5.44,7.35,Completed,1.35,2025-12-05 00:37:10
+Learn new framework,High,Personal,21,1.11,1.43,Completed,1.29,2025-11-20 20:35:03
+Book appointment,Low,Study,21,3.62,2.68,Completed,0.74,2026-03-22 02:13:26
+Water plants,Low,Health,16,7.67,7.81,Completed,1.02,2026-03-06 05:43:07
+Research tools,Medium,Health,23,3.9,3.31,Completed,0.85,2025-12-24 19:54:30
+Attend webinar,Medium,Study,20,2.03,1.86,Completed,0.92,2026-03-16 18:00:35
+Update portfolio,Low,Study,12,7.91,15.57,Completed,1.97,2025-10-25 20:36:45
+Grocery shopping,Low,Health,11,4.71,4.78,Completed,1.01,2025-10-24 06:11:30
+Track expenses,High,Health,2,1.56,1.63,Completed,1.04,2025-12-14 01:27:58
+Write API docs,High,Study,29,7.72,7.56,Completed,0.98,2025-12-03 01:09:35
+Draft proposal,High,Study,16,6.22,8.7,Completed,1.4,2025-12-30 02:42:52
+Call client,Medium,Study,13,0.67,0.81,Completed,1.21,2025-11-16 05:04:30
+Learn new framework,High,Health,16,0.88,1.05,Completed,1.19,2026-03-13 03:09:44
+Create dashboard,Medium,Study,28,4.53,4.01,Completed,0.89,2025-10-26 11:22:49
+Organize files,Medium,Study,13,3.24,2.72,Completed,0.84,2026-01-17 13:27:16
+Plan sprint,Low,Study,13,2.66,3.61,Completed,1.36,2026-02-25 21:34:46
+Update dependencies,Low,Study,4,5.6,4.86,Completed,0.87,2025-10-19 05:46:00
+Meal prep,Medium,Health,12,4.68,6.57,Completed,1.4,2025-11-08 02:52:31
+Deploy to staging,Low,Health,2,0.8,0.7,Completed,0.87,2025-12-04 03:16:49
+Team standup,High,Personal,17,5.05,4.9,Completed,0.97,2026-01-27 12:18:10
+Code review,Medium,Health,24,7.93,11.69,Completed,1.47,2026-01-23 18:09:20
+Code review,Low,Work,16,4.72,8.31,Completed,1.76,2025-12-10 23:52:12
+Pay bills,Medium,Work,26,4.88,7.41,Completed,1.52,2026-03-18 19:28:29
+Gym session,Low,Personal,21,4.06,6.97,Completed,1.72,2026-02-28 04:22:31
+Sketch wireframe,Low,Health,16,0.89,0.82,Completed,0.92,2026-01-30 14:40:06
+Design mockup,High,Personal,8,6.66,6.1,Completed,0.92,2026-02-13 11:51:44
+Call client,High,Health,14,3.81,3.72,Completed,0.98,2026-02-11 13:09:46
+Review analytics,Low,Work,30,6.31,8.29,Completed,1.31,2026-03-14 04:55:18
+Deploy to staging,Low,Health,7,1.54,2.2,Completed,1.43,2026-02-06 01:23:56
+Run benchmarks,Medium,Study,15,7.68,11.75,Completed,1.53,2025-12-05 22:33:28
+Pay bills,Low,Study,24,6.29,9.97,Completed,1.59,2026-03-05 12:29:26
+Submit assignment,Low,Study,8,4.13,4.39,Completed,1.06,2025-11-27 10:18:18
+Deploy to staging,Medium,Study,23,5.79,7.9,Completed,1.36,2025-12-01 00:42:55
+Design mockup,Low,Health,26,7.5,12.29,Completed,1.64,2025-11-25 08:23:38
+Study chapter,Medium,Study,25,6.64,9.59,Completed,1.44,2025-11-25 20:48:20
+Review analytics,Low,Health,30,1.09,1.39,Completed,1.28,2025-11-19 06:18:49
+Pay bills,High,Study,18,2.02,2.09,Completed,1.03,2026-01-17 14:23:31
+Fix login bug,High,Personal,24,1.32,1.58,Completed,1.2,2025-11-16 13:08:04
+Deploy to staging,Low,Work,4,2.25,2.78,Completed,1.24,2026-02-16 18:19:45
+Research tools,Low,Health,1,6.28,12.27,Completed,1.95,2025-10-31 03:15:25
+Morning workout,Medium,Work,25,5.38,8.45,Completed,1.57,2025-12-01 19:56:53
+Study chapter,High,Personal,8,5.39,6.29,Completed,1.17,2026-02-17 21:10:15
+Update dependencies,Medium,Health,6,7.12,11.02,Completed,1.55,2025-10-07 12:33:15
+Study chapter,High,Work,28,7.52,10.25,Completed,1.36,2026-03-19 17:07:03
+Morning workout,Medium,Health,4,4.76,7.34,Completed,1.54,2025-12-04 12:36:27
+Optimize query,Low,Health,16,4.57,8.48,Completed,1.86,2025-10-26 12:36:55
+Weekly review,Medium,Study,4,1.95,2.08,Completed,1.07,2026-02-19 10:27:39
+Write API docs,Low,Personal,24,1.9,2.16,Completed,1.14,2025-11-26 18:06:39
+Clean inbox,High,Study,21,5.08,6.85,Completed,1.35,2026-03-10 01:15:00
+Deploy to staging,High,Study,4,3.51,3.48,Completed,0.99,2025-10-27 18:29:49
+Grocery shopping,High,Study,13,0.55,0.56,Completed,1.02,2026-02-23 19:57:32
+Write blog post,Medium,Personal,19,4.87,3.94,Completed,0.81,2026-02-04 09:35:01
+Water plants,High,Study,15,5.51,5.8,Completed,1.05,2025-12-18 04:34:36
+Track expenses,Low,Personal,30,1.38,2.65,Completed,1.92,2025-12-10 20:04:37
+Meal prep,High,Study,16,7.68,7.5,Completed,0.98,2026-02-22 15:53:42
+Backup photos,Medium,Personal,30,5.76,6.78,Completed,1.18,2026-01-12 20:12:44
+Setup CI pipeline,High,Health,20,5.6,7.48,Completed,1.34,2025-10-16 08:44:29
+Fix login bug,Low,Personal,3,5.78,10.94,Completed,1.89,2025-10-22 06:07:45
+Practice coding,Low,Work,6,4.52,5.09,Completed,1.13,2026-01-09 12:09:56
+Optimize query,Low,Health,19,2.04,2.72,Completed,1.33,2026-03-24 00:19:34
+Fix login bug,High,Health,17,3.9,4.32,Completed,1.11,2026-01-17 23:12:53
+Write report,Low,Personal,24,6.55,4.77,Completed,0.73,2025-11-18 21:03:17
+Run benchmarks,Low,Work,14,1.05,1.21,Completed,1.15,2025-10-12 20:20:27
+Read documentation,High,Personal,16,7.9,7.24,Completed,0.92,2025-12-18 20:39:22
+Schedule interview,Low,Health,21,7.84,15.31,Completed,1.95,2025-12-12 04:18:45
+Run benchmarks,Medium,Personal,22,3.32,5.22,Completed,1.57,2026-03-19 06:54:50
+Update dependencies,Low,Personal,4,6.95,6.48,Completed,0.93,2026-01-12 19:00:15
+Meditate,Low,Health,27,7.84,5.52,Completed,0.7,2025-10-04 21:09:09
+Submit assignment,Low,Personal,14,5.89,8.2,Completed,1.39,2026-03-09 08:20:09
+Sketch wireframe,Medium,Work,9,3.1,2.95,Completed,0.95,2026-03-19 09:57:50
+Send emails,High,Personal,14,6.57,7.93,Completed,1.21,2026-03-21 01:48:09
+Water plants,High,Work,20,1.0,0.92,Completed,0.92,2026-01-24 13:04:40
+Call client,High,Work,13,6.05,6.77,Completed,1.12,2026-01-13 06:39:40
+Sketch wireframe,High,Study,10,4.28,4.35,Completed,1.02,2026-03-27 09:55:04
+Meditate,Low,Personal,22,4.98,8.78,Completed,1.76,2025-11-15 11:15:04
+Plan sprint,Low,Personal,14,4.41,4.81,Completed,1.09,2025-10-12 07:16:53
+Learn new framework,Low,Health,18,5.59,7.51,Completed,1.34,2025-12-06 08:17:15
+Schedule interview,Low,Personal,14,2.89,3.56,Completed,1.23,2025-11-27 16:46:48
+Attend webinar,Low,Personal,28,4.05,4.02,Completed,0.99,2026-03-15 23:37:48
+Plan sprint,Medium,Personal,18,7.36,8.32,Completed,1.13,2025-12-20 08:15:56
+Practice coding,Medium,Study,7,2.32,2.47,Completed,1.06,2025-10-15 19:41:35
+Schedule interview,High,Work,27,4.52,4.5,Completed,1.0,2025-11-21 14:19:12
+Plan sprint,High,Personal,25,1.91,2.28,Completed,1.19,2026-02-07 20:23:04
+Write report,Medium,Personal,30,2.07,2.21,Completed,1.07,2026-03-25 23:25:05
+Deploy to staging,High,Personal,4,7.72,9.83,Completed,1.27,2026-02-23 22:38:03
+Plan sprint,Low,Study,7,5.03,6.11,Completed,1.21,2025-11-15 22:33:41
+Create dashboard,Medium,Study,18,3.35,4.42,Completed,1.32,2025-11-29 08:33:01
+Deploy to staging,Low,Study,15,7.12,5.9,Completed,0.83,2026-02-17 17:53:22
+Submit assignment,High,Personal,14,3.28,3.03,Completed,0.92,2026-03-17 06:07:32
+Research tools,High,Study,30,2.46,2.93,Completed,1.19,2026-02-17 06:41:49
+Refactor module,High,Health,8,1.97,2.15,Completed,1.09,2026-03-11 06:57:00
+Draft proposal,Low,Health,22,5.41,6.16,Completed,1.14,2026-02-25 16:43:00
+Sketch wireframe,Medium,Health,26,1.76,1.9,Completed,1.08,2025-10-27 15:27:08
+Setup CI pipeline,High,Work,18,7.38,10.3,Completed,1.4,2025-10-11 20:54:34
+Research tools,High,Personal,22,7.59,7.02,Completed,0.92,2025-10-01 16:56:56
+Optimize query,Low,Health,23,2.24,2.01,Completed,0.9,2025-11-11 22:30:21
+Deploy to staging,Medium,Health,21,0.95,1.27,Completed,1.34,2026-01-28 04:23:12
+Setup CI pipeline,High,Study,18,0.55,0.61,Completed,1.11,2025-10-03 17:08:52
+Water plants,Low,Health,1,7.83,10.59,Completed,1.35,2026-02-12 23:27:26
+Organize files,High,Study,4,1.3,1.51,Completed,1.16,2025-11-16 06:11:40
+Weekly review,Medium,Personal,13,2.5,2.16,Completed,0.86,2025-12-18 07:25:23
+Learn new framework,Low,Work,22,2.19,3.89,Completed,1.78,2025-10-16 02:54:01
+Book appointment,High,Work,13,3.54,4.16,Completed,1.18,2025-10-11 08:42:46
+Code review,Low,Work,16,1.79,3.22,Completed,1.8,2026-02-02 16:41:02
+Pay bills,Low,Health,8,7.39,7.2,Completed,0.97,2026-03-18 00:54:58
+Run benchmarks,Medium,Work,3,0.85,1.15,Completed,1.35,2025-11-23 21:49:52
+Gym session,High,Personal,11,7.47,6.78,Completed,0.91,2025-11-09 16:37:30
+Write API docs,Low,Personal,30,6.66,5.33,Completed,0.8,2025-11-01 00:16:16
+Code review,Low,Health,13,6.76,10.68,Completed,1.58,2026-01-13 10:24:06
+Review analytics,Low,Study,23,1.55,2.54,Completed,1.64,2026-01-05 17:03:43
+Meal prep,High,Health,8,1.23,1.62,Completed,1.32,2025-12-05 14:28:32
+Draft proposal,Medium,Personal,9,0.72,1.03,Completed,1.43,2025-12-26 22:54:51
+Gym session,Medium,Health,13,4.65,5.33,Completed,1.15,2026-02-09 10:48:21
+Update resume,High,Work,10,6.29,8.17,Completed,1.3,2026-02-15 22:31:29
+Review analytics,Medium,Health,23,1.66,2.37,Completed,1.43,2025-10-30 10:10:50
+Practice coding,Medium,Study,3,3.21,2.58,Completed,0.8,2025-11-29 07:49:43
+Plan sprint,Medium,Health,3,1.27,1.21,Completed,0.95,2025-12-26 14:57:41
+Meal prep,High,Study,12,0.7,0.82,Completed,1.17,2026-01-24 09:04:06
+Sketch wireframe,Medium,Personal,14,0.59,0.66,Completed,1.12,2025-10-16 21:55:36
+Grocery shopping,Low,Study,22,4.41,5.27,Completed,1.2,2025-10-27 10:14:23
+Research tools,Medium,Study,3,4.2,3.92,Completed,0.93,2025-11-23 01:16:25
+Sketch wireframe,Medium,Health,12,6.37,6.38,Completed,1.0,2025-11-17 08:23:28
+Write report,Low,Health,15,5.13,4.3,Completed,0.84,2025-11-28 15:00:27
+Practice coding,Medium,Study,13,6.81,9.83,Completed,1.44,2025-12-03 10:58:26
+Prepare presentation,Medium,Study,28,6.62,8.74,Completed,1.32,2026-01-23 21:16:12
+Read documentation,Medium,Health,23,5.02,4.82,Completed,0.96,2025-11-30 11:23:54
+Refactor module,Medium,Study,23,2.69,3.51,Completed,1.3,2026-01-20 06:59:25
+Write API docs,Medium,Personal,26,2.6,2.9,Completed,1.12,2025-10-22 13:57:14
+Send emails,Low,Health,6,7.98,12.66,Completed,1.59,2026-01-15 06:50:46
+Update resume,Low,Health,26,2.07,2.23,Completed,1.08,2026-02-12 00:02:41
+Backup photos,Low,Personal,21,4.24,4.64,Completed,1.09,2025-11-18 12:46:49
+Deploy to staging,Low,Health,13,3.67,2.92,Completed,0.8,2026-01-24 13:46:19
+Run benchmarks,Low,Work,30,4.3,7.87,Completed,1.83,2025-12-20 16:37:15
+Plan meeting,Medium,Work,26,5.76,7.08,Completed,1.23,2026-02-01 09:20:03
+Study chapter,High,Health,12,5.43,5.34,Completed,0.98,2026-01-27 10:29:03
+Create dashboard,Medium,Personal,14,7.74,6.85,Completed,0.89,2025-10-19 14:44:17
+Submit assignment,Low,Health,18,6.1,8.87,Completed,1.45,2026-01-20 03:59:22
+Optimize query,Medium,Personal,25,3.43,4.61,Completed,1.34,2026-02-11 12:52:09
+Plan meeting,Medium,Work,16,7.98,7.05,Completed,0.88,2025-12-20 05:47:03
+Call client,Low,Health,10,1.56,1.79,Completed,1.15,2026-03-01 18:09:41
+Team standup,Medium,Work,15,4.07,5.61,Completed,1.38,2025-12-27 07:45:18
+Code review,Medium,Work,23,0.84,0.75,Completed,0.89,2026-03-14 08:39:50
+Setup CI pipeline,Low,Personal,30,6.5,12.86,Completed,1.98,2025-11-16 19:54:54
+Submit assignment,Low,Health,18,1.7,2.13,Completed,1.25,2025-12-29 04:31:36
+Send emails,Low,Personal,21,1.88,2.92,Completed,1.55,2025-12-16 06:44:45
+Call client,Medium,Study,13,4.94,3.97,Completed,0.8,2025-11-11 04:13:14
+Run benchmarks,Low,Personal,3,6.57,9.53,Completed,1.45,2026-03-04 17:08:57
+Draft proposal,Medium,Study,15,2.94,2.62,Completed,0.89,2026-02-07 16:53:36
+Database backup,Low,Health,13,3.41,4.99,Completed,1.46,2025-12-07 00:38:40
+Track expenses,Low,Work,22,1.79,2.9,Completed,1.62,2025-11-27 05:23:30
+Read documentation,Low,Study,4,1.5,1.52,Completed,1.01,2025-10-23 04:13:11
+Write API docs,Low,Health,13,1.56,1.94,Completed,1.24,2025-10-27 05:42:23
+Learn new framework,Medium,Personal,21,1.89,2.32,Completed,1.23,2026-03-27 22:47:56
+Practice coding,Low,Work,10,1.75,1.54,Completed,0.88,2025-11-30 13:14:50
+Schedule interview,Medium,Health,16,7.64,6.95,Completed,0.91,2026-03-07 18:22:47
+Draft proposal,Medium,Personal,14,5.64,7.72,Completed,1.37,2025-12-25 15:41:50
+Study chapter,High,Study,26,4.74,6.07,Completed,1.28,2025-11-26 04:26:09
+Review analytics,High,Health,6,4.53,5.85,Completed,1.29,2026-01-18 07:19:13
+Run benchmarks,Low,Study,19,4.33,3.67,Completed,0.85,2026-02-27 23:29:12
+Run benchmarks,Low,Personal,2,6.67,11.26,Completed,1.69,2025-12-25 04:06:56
+Meditate,Medium,Work,27,1.27,1.68,Completed,1.32,2025-11-17 12:46:45
+Design mockup,Medium,Personal,28,2.47,3.59,Completed,1.45,2025-12-24 17:24:44
+Attend webinar,High,Health,19,6.58,8.19,Completed,1.24,2026-03-16 15:58:33
+Fix login bug,High,Study,26,5.12,5.14,Completed,1.0,2025-11-09 15:37:16
+Morning workout,Low,Study,18,2.61,2.4,Completed,0.92,2026-02-14 04:19:36
+Water plants,Low,Work,28,2.51,3.44,Completed,1.37,2026-03-24 06:13:33
+Grocery shopping,High,Personal,26,7.72,8.54,Completed,1.11,2025-10-11 23:29:26
+Refactor module,Low,Health,8,7.0,6.23,Completed,0.89,2025-12-02 00:16:40
+Schedule interview,Medium,Health,21,1.57,1.59,Completed,1.01,2025-12-19 21:37:37
+Optimize query,High,Study,29,5.25,6.74,Completed,1.28,2025-12-17 16:37:08
+Team standup,Low,Work,12,7.52,9.71,Completed,1.29,2026-01-03 05:39:01
+Database backup,Low,Work,15,1.2,1.83,Completed,1.53,2026-02-12 20:48:01
+Grocery shopping,Low,Study,14,3.48,6.17,Completed,1.77,2026-01-04 12:44:13
+Draft proposal,Medium,Study,19,3.03,2.74,Completed,0.9,2026-03-14 23:46:31
+Weekly review,Low,Work,2,6.22,5.16,Completed,0.83,2026-03-01 16:23:21
+Clean inbox,High,Personal,6,7.47,8.37,Completed,1.12,2025-09-30 14:20:54
+Grocery shopping,Low,Work,29,7.32,11.31,Completed,1.55,2025-10-31 08:05:13
+Learn new framework,Low,Personal,3,3.2,3.79,Completed,1.18,2026-03-24 23:12:46
+Submit assignment,High,Health,10,3.47,4.38,Completed,1.26,2026-02-24 02:50:07
+Update resume,Low,Personal,4,1.18,0.83,Completed,0.7,2026-01-01 01:16:43
+Pay bills,Low,Study,22,2.2,2.81,Completed,1.28,2025-10-02 00:46:21
+Update resume,High,Personal,14,7.91,9.86,Completed,1.25,2026-01-01 05:26:34
+Write blog post,Medium,Study,26,1.17,1.03,Completed,0.88,2025-11-30 07:31:19
+Learn new framework,High,Personal,27,3.37,4.3,Completed,1.28,2025-10-26 07:42:17
+Practice coding,High,Study,1,4.48,5.4,Completed,1.21,2025-11-01 08:02:12
+Track expenses,Low,Health,24,2.1,1.88,Completed,0.9,2025-12-19 09:54:19
+Gym session,High,Health,4,1.15,1.12,Completed,0.97,2025-10-24 09:09:09
+Grocery shopping,Medium,Work,11,7.72,11.06,Completed,1.43,2025-11-17 13:57:59
+File taxes,High,Work,20,4.65,5.86,Completed,1.26,2025-11-24 19:01:31
+Organize files,Low,Health,7,7.07,9.71,Completed,1.37,2026-01-07 09:44:44
+Draft proposal,Medium,Health,26,5.35,8.12,Completed,1.52,2025-11-15 22:36:30
+Write report,High,Study,21,2.31,2.76,Completed,1.19,2026-01-11 01:11:30
+Write blog post,Medium,Personal,28,1.49,2.19,Completed,1.47,2025-12-21 04:33:52
+Update resume,Medium,Work,25,7.66,6.58,Completed,0.86,2026-01-22 12:30:38
+Update dependencies,Medium,Study,30,2.12,1.8,Completed,0.85,2026-03-02 17:33:22
+Update dependencies,Low,Work,25,5.84,7.24,Completed,1.24,2026-02-13 17:52:22
+Meditate,Low,Work,20,4.52,4.06,Completed,0.9,2025-10-16 16:47:20
+Update dependencies,Low,Work,26,7.41,6.68,Completed,0.9,2025-12-02 21:57:54
+Fix login bug,Medium,Personal,24,5.74,8.97,Completed,1.56,2025-11-15 19:19:45
+Fix login bug,High,Study,4,7.43,8.37,Completed,1.13,2026-01-26 16:33:46
+Attend webinar,Low,Personal,24,6.06,5.63,Completed,0.93,2025-10-02 22:13:16
+Setup CI pipeline,Low,Study,16,0.59,1.14,Completed,1.93,2026-01-10 00:34:47
+Sketch wireframe,High,Work,24,3.29,4.25,Completed,1.29,2025-11-21 15:43:53

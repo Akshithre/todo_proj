@@ -126,7 +126,7 @@ const SmartSuggestions: React.FC = () => {
                     {pred && (
                       <div className="flex items-center gap-1.5 mt-2 text-xs text-accent">
                         <Clock size={12} />
-                        Predicted: {pred.predicted_time}h (confidence: {Math.round(pred.confidence * 100)}%)
+                        Predicted: {pred.predicted_time}h | {pred.recommendation}
                       </div>
                     )}
                     {predicting && !pred && (
@@ -175,7 +175,8 @@ const SmartSuggestions: React.FC = () => {
                 <div key={s.task_id} className="bg-white/5 rounded-xl p-3 border border-white/5">
                   <p className="text-sm font-medium truncate">{s.task_name}</p>
                   <p className="text-xs text-muted mt-1 flex items-center gap-1">
-                    {s.current_priority} <ArrowRight size={10} /> <span className="text-accent">{s.suggested_priority}</span>
+                    Do this {s.do_this} <ArrowRight size={10} /> <span className="text-accent">{s.suggested_priority}</span>
+                    {" "}&mdash; {s.predicted_time}h ({Math.round(s.confidence * 100)}%)
                   </p>
                   <button
                     onClick={() => applySuggestion(s)}

@@ -1,29 +1,35 @@
 """
 Train a Random Forest model to predict task completion time.
-Reads training data from Azure Blob Storage (CSV) or a local fallback.
+Downloads training data from Azure Blob Storage, preprocesses it,
+trains the model, and saves all artifacts locally.
 """
 import os
 import io
+
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import LabelEncoder
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "backend", ".env"))
 
+ML_DIR = os.path.dirname(__file__)
 PRIORITY_MAP = {"High": 3, "Medium": 2, "Low": 1}
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "completion_model.pkl")
 
+
+# ── Data loading ────────────────────────────────────────────────────
 
 def load_data_from_blob() -> pd.DataFrame:
-    """Try to load CSV from Azure Blob Storage."""
+    """Download tasks_data.csv from Azure Blob Storage."""
     from azure.storage.blob import BlobServiceClient
 
     conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
     container = os.getenv("AZURE_STORAGE_CONTAINER", "tododata")
-    blob_name = "tasks_processed.csv"
+    blob_name = "tasks_data.csv"
 
     blob_service = BlobServiceClient.from_connection_string(conn_str)
     blob_client = blob_service.get_blob_client(container=container, blob=blob_name)
@@ -32,57 +38,94 @@ def load_data_from_blob() -> pd.DataFrame:
 
 
 def load_data_local() -> pd.DataFrame:
-    """Generate synthetic training data for local development."""
-    import numpy as np
-
-    np.random.seed(42)
-    n = 500
-    priorities = np.random.choice([1, 2, 3], size=n)
-    estimated = np.random.uniform(0.5, 10, size=n)
-    deadline_gap = np.random.uniform(1, 200, size=n)
-    actual = (
-        estimated * 0.8
-        + priorities * 0.5
-        - deadline_gap * 0.005
-        + np.random.normal(0, 0.5, size=n)
-    ).clip(0.1)
-
-    return pd.DataFrame({
-        "priority_score": priorities,
-        "estimated_time": estimated,
-        "deadline_gap_hours": deadline_gap,
-        "actual_time": actual,
-    })
+    """Fall back to local CSV if Azure is unavailable."""
+    local_path = os.path.join(ML_DIR, "tasks_data.csv")
+    if os.path.exists(local_path):
+        return pd.read_csv(local_path)
+    raise FileNotFoundError(
+        "No local tasks_data.csv found. Run generate_sample_data.py first."
+    )
 
 
-def train():
-    try:
-        df = load_data_from_blob()
-        print("Loaded data from Azure Blob Storage")
-        if "priority" in df.columns:
-            df["priority_score"] = df["priority"].map(PRIORITY_MAP).fillna(2)
-    except Exception:
-        print("Azure Blob not available — using synthetic data")
-        df = load_data_local()
+# ── Preprocessing ───────────────────────────────────────────────────
 
-    features = ["priority_score", "estimated_time", "deadline_gap_hours"]
+def preprocess(df: pd.DataFrame):
+    """Encode features and return X, y, and the fitted encoders."""
+    df = df.dropna(subset=["priority", "category", "deadline_gap",
+                           "estimated_time", "actual_time"]).copy()
+
+    # Priority encoding
+    df["priority_encoded"] = df["priority"].map(PRIORITY_MAP).fillna(2).astype(int)
+
+    # Category encoding
+    category_encoder = LabelEncoder()
+    df["category_encoded"] = category_encoder.fit_transform(df["category"])
+
+    features = ["priority_encoded", "category_encoded",
+                "deadline_gap", "estimated_time"]
     target = "actual_time"
 
-    df = df.dropna(subset=features + [target])
     X = df[features]
     y = df[target]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    return X, y, category_encoder
 
+
+# ── Training ────────────────────────────────────────────────────────
+
+def train():
+    # Load data
+    try:
+        df = load_data_from_blob()
+        print("Loaded data from Azure Blob Storage")
+    except Exception as e:
+        print(f"Azure Blob not available ({e}) — using local CSV")
+        df = load_data_local()
+
+    print(f"Dataset size: {len(df)} rows")
+
+    # Preprocess
+    X, y, category_encoder = preprocess(df)
+
+    # Split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+    print(f"Train: {len(X_train)}  |  Test: {len(X_test)}")
+
+    # Train
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
 
+    # Evaluate
     preds = model.predict(X_test)
-    print(f"MAE:  {mean_absolute_error(y_test, preds):.3f}")
-    print(f"R²:   {r2_score(y_test, preds):.3f}")
+    mae = mean_absolute_error(y_test, preds)
+    rmse = np.sqrt(mean_squared_error(y_test, preds))
+    r2 = r2_score(y_test, preds)
 
-    joblib.dump(model, MODEL_PATH)
-    print(f"Model saved to {MODEL_PATH}")
+    print(f"\n--- Evaluation ---")
+    print(f"MAE:  {mae:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"R2:   {r2:.4f}")
+
+    # Sample predictions
+    print(f"\n--- Sample Predictions (first 10) ---")
+    print(f"{'Actual':>10}  {'Predicted':>10}  {'Error':>10}")
+    for actual, pred in list(zip(y_test.values, preds))[:10]:
+        print(f"{actual:>10.2f}  {pred:>10.2f}  {actual - pred:>+10.2f}")
+
+    # Save artifacts
+    model_path = os.path.join(ML_DIR, "completion_model.pkl")
+    cat_enc_path = os.path.join(ML_DIR, "category_encoder.pkl")
+    pri_enc_path = os.path.join(ML_DIR, "priority_encoder.pkl")
+
+    joblib.dump(model, model_path)
+    joblib.dump(category_encoder, cat_enc_path)
+    joblib.dump(PRIORITY_MAP, pri_enc_path)
+
+    print(f"\nSaved: {model_path}")
+    print(f"Saved: {cat_enc_path}")
+    print(f"Saved: {pri_enc_path}")
 
 
 if __name__ == "__main__":

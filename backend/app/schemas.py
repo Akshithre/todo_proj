@@ -192,16 +192,25 @@ class TaskResponse(BaseModel):
 
 class TimePrediction(BaseModel):
     task_id: int
+    task_name: str
     predicted_time: float
-    confidence: float
+    confidence: float = 0.0
+    your_estimate: Optional[float]
+    recommendation: str
 
 
 class PrioritySuggestion(BaseModel):
     task_id: int
     task_name: str
-    current_priority: str
     suggested_priority: str
     reason: str
+    predicted_time: float
+    confidence: float
+    do_this: str
+
+
+class SuggestionsResponse(BaseModel):
+    suggestions: list[PrioritySuggestion]
 
 
 # ── Comments ─────────────────────────────────────────────────────────────────
