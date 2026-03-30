@@ -4,22 +4,30 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, CheckSquare, PlusCircle, BarChart2,
   Sparkles, Settings, LogOut, ChevronLeft, ChevronRight, Zap,
+  Users, Shield,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-
-const links = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/tasks", label: "My Tasks", icon: CheckSquare },
-  { to: "/add", label: "Add Task", icon: PlusCircle },
-  { to: "/analytics", label: "Analytics", icon: BarChart2 },
-  { to: "/suggestions", label: "Smart AI", icon: Sparkles },
-  { to: "/settings", label: "Settings", icon: Settings },
-];
+import InitialsAvatar from "./InitialsAvatar";
 
 const Sidebar: React.FC = () => {
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+
+  const links = [
+    { to: "/", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/tasks", label: "My Tasks", icon: CheckSquare },
+    { to: "/add", label: "Add Task", icon: PlusCircle },
+    { to: "/analytics", label: "Analytics", icon: BarChart2 },
+    { to: "/suggestions", label: "Smart AI", icon: Sparkles },
+    { to: "/teams", label: "Teams", icon: Users },
+    { to: "/settings", label: "Settings", icon: Settings },
+  ];
+
+  // Add admin link for superadmins
+  if (user?.role === "superadmin") {
+    links.push({ to: "/admin", label: "Admin", icon: Shield });
+  }
 
   return (
     <>
@@ -66,7 +74,7 @@ const Sidebar: React.FC = () => {
         {/* Nav */}
         <div className="flex-1 py-4 space-y-1 px-3 overflow-y-auto">
           {links.map((l) => {
-            const active = pathname === l.to;
+            const active = pathname === l.to || (l.to !== "/" && pathname.startsWith(l.to));
             return (
               <Link
                 key={l.to}
@@ -113,11 +121,9 @@ const Sidebar: React.FC = () => {
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-3 px-3 py-2 mb-1"
               >
-                <div className="w-8 h-8 rounded-full gradient-accent flex items-center justify-center text-xs font-bold flex-shrink-0">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
+                <InitialsAvatar name={user.full_name} size="sm" />
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold truncate">{user.name}</p>
+                  <p className="text-xs font-semibold truncate">{user.full_name}</p>
                   <p className="text-[10px] text-muted truncate">{user.email}</p>
                 </div>
               </motion.div>
