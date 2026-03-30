@@ -92,7 +92,7 @@ const NotificationDropdown: React.FC = () => {
             initial={{ opacity: 0, y: -8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            className="absolute right-0 top-12 w-80 max-h-[28rem] glass rounded-2xl border border-white/10 shadow-2xl overflow-hidden z-50"
+            className="absolute right-0 top-12 w-80 max-h-[28rem] bg-dark-800/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden z-50"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
               <h3 className="text-sm font-semibold">Notifications</h3>
