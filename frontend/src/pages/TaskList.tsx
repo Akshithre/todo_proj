@@ -4,6 +4,7 @@ import { Search, Filter, Clock, Trash2, Check, AlertTriangle, PlusCircle, List, 
 import { Link, useSearchParams } from "react-router-dom";
 import { Task, TimePrediction } from "../types";
 import { getTasks, updateTask, deleteTask, predictTime, duplicateTask, getOrgMembers } from "../services/api";
+import { useDataCache } from "../context/DataCache";
 import { SkeletonCard } from "../components/SkeletonLoader";
 import PageWrapper from "../components/PageWrapper";
 import TaskDrawer from "../components/TaskDrawer";
@@ -49,21 +50,23 @@ const TaskList: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [members, setMembers] = useState<{ user_id: number; full_name: string }[]>([]);
 
+  const { loadTasks: cachedLoadTasks, invalidate } = useDataCache();
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
-      if (teamIdParam) params.team_id = Number(teamIdParam);
-      setTasks(await getTasks(params));
+      const params = teamIdParam ? { team_id: Number(teamIdParam) } : undefined;
+      const [t, m] = await Promise.all([
+        cachedLoadTasks(params),
+        getOrgMembers().catch(() => [] as any[]),
+      ]);
+      setTasks(t);
+      setMembers(m.map((u: any) => ({ user_id: u.user_id, full_name: u.full_name })));
     } catch {
       toast.error("Failed to load tasks");
     }
-    try {
-      const m = await getOrgMembers();
-      setMembers(m.map((u) => ({ user_id: u.user_id, full_name: u.full_name })));
-    } catch {}
     setLoading(false);
-  }, [teamIdParam]);
+  }, [teamIdParam, cachedLoadTasks]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -83,6 +86,7 @@ const TaskList: React.FC = () => {
       await updateTask(id, { status: "Completed" });
       confetti({ particleCount: 50, spread: 50, origin: { y: 0.7 } });
       toast.success("Task completed!");
+      invalidate();
       load();
     } catch { toast.error("Failed to complete task"); }
   };
@@ -91,6 +95,7 @@ const TaskList: React.FC = () => {
     try {
       await deleteTask(id);
       toast.success("Task deleted");
+      invalidate();
       load();
     } catch { toast.error("Failed to delete task"); }
   };

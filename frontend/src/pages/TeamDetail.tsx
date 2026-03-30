@@ -86,8 +86,15 @@ const TeamDetailPage: React.FC = () => {
       toast.success("Member added!");
       setEmail("");
       load();
-    } catch {
-      toast.error("Failed to add member");
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      if (detail === "User not found") {
+        toast.error("No account found for that email. They need to register first.");
+      } else if (detail === "Already a member") {
+        toast.error("This user is already a member of this team.");
+      } else {
+        toast.error(detail || "Failed to add member");
+      }
     }
     setAdding(false);
   };

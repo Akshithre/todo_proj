@@ -6,7 +6,7 @@ import joblib
 import httpx
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict
 from pathlib import Path
 
@@ -159,6 +159,15 @@ def call_ml_endpoint(task_data: dict) -> dict:
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+def _user_task_filter(user: Optional["User"]):
+    """Return a SQLAlchemy filter clause scoping tasks to the given user."""
+    if user:
+        if user.org_id:
+            return (Task.org_id == user.org_id) | ((Task.org_id == None) & (Task.user_id == user.user_id))
+        return Task.user_id == user.user_id
+    return (Task.user_id == None) & (Task.org_id == None)
+
+
 def _hours_until_deadline(deadline: Optional[datetime]) -> float:
     if deadline is None:
         return 168.0
@@ -189,6 +198,15 @@ def _create_notification(db: Session, user_id: int, type: str, title: str,
         message=message, task_id=task_id,
     )
     db.add(notif)
+
+
+def _build_activity(log: ActivityLog) -> dict:
+    return {
+        "log_id": log.log_id, "user_id": log.user_id, "action": log.action,
+        "entity_type": log.entity_type, "entity_id": log.entity_id,
+        "metadata_json": log.metadata_json, "created_at": log.created_at,
+        "user_name": log.user.full_name if log.user else None,
+    }
 
 
 def _build_task_response(task: Task, db: Session, current_user_id: int = None) -> dict:
@@ -452,16 +470,7 @@ def get_org_activity(
     logs = db.query(ActivityLog).filter(
         ActivityLog.org_id == user.org_id
     ).order_by(ActivityLog.created_at.desc()).limit(limit).all()
-    result = []
-    for log in logs:
-        d = {
-            "log_id": log.log_id, "user_id": log.user_id, "action": log.action,
-            "entity_type": log.entity_type, "entity_id": log.entity_id,
-            "metadata_json": log.metadata_json, "created_at": log.created_at,
-            "user_name": log.user.full_name if log.user else None,
-        }
-        result.append(d)
-    return result
+    return [_build_activity(log) for log in logs]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -489,10 +498,9 @@ def create_team(req: TeamCreate, user: User = Depends(require_org_admin), db: Se
     db.add(team)
     db.flush()
     db.add(TeamMember(team_id=team.team_id, user_id=user.user_id, role="owner"))
-    db.commit()
-    db.refresh(team)
     _log_activity(db, user, "team_created", "team", team.team_id, {"name": team.name}, team.team_id)
     db.commit()
+    db.refresh(team)
     return {
         **{c.name: getattr(team, c.name) for c in team.__table__.columns},
         "member_count": 1, "task_count": 0,
@@ -507,13 +515,13 @@ def get_team(team_id: int, user: User = Depends(get_current_user), db: Session =
     if team.org_id != user.org_id and user.role != "superadmin":
         raise HTTPException(status_code=403, detail="Access denied")
     members = db.query(TeamMember).filter(TeamMember.team_id == team_id).all()
-    member_list = []
-    for m in members:
-        u = db.query(User).filter(User.user_id == m.user_id).first()
-        member_list.append({
-            "id": m.id, "user_id": m.user_id, "role": m.role, "joined_at": m.joined_at,
-            "user": u,
-        })
+    user_ids = [m.user_id for m in members]
+    users_by_id = {u.user_id: u for u in db.query(User).filter(User.user_id.in_(user_ids)).all()} if user_ids else {}
+    member_list = [
+        {"id": m.id, "user_id": m.user_id, "role": m.role, "joined_at": m.joined_at,
+         "user": users_by_id.get(m.user_id)}
+        for m in members
+    ]
     return {
         **{c.name: getattr(team, c.name) for c in team.__table__.columns},
         "member_count": len(members),
@@ -571,14 +579,13 @@ def add_team_member(team_id: int, req: AddMemberRequest, user: User = Depends(ge
         raise HTTPException(status_code=400, detail="Already a member")
     member = TeamMember(team_id=team_id, user_id=target.user_id, role=req.role)
     db.add(member)
-    db.commit()
-    db.refresh(member)
     _create_notification(db, target.user_id, "assignment",
                          f"You were added to team {team.name}",
                          f"Added by {user.full_name}")
     _log_activity(db, user, "member_added", "team", team_id,
                   {"member": target.full_name}, team_id)
     db.commit()
+    db.refresh(member)
     return {"id": member.id, "user_id": member.user_id, "role": member.role,
             "joined_at": member.joined_at, "user": target}
 
@@ -615,15 +622,7 @@ def get_team_activity(team_id: int, user: User = Depends(get_current_user),
     logs = db.query(ActivityLog).filter(
         ActivityLog.team_id == team_id
     ).order_by(ActivityLog.created_at.desc()).limit(limit).all()
-    result = []
-    for log in logs:
-        result.append({
-            "log_id": log.log_id, "user_id": log.user_id, "action": log.action,
-            "entity_type": log.entity_type, "entity_id": log.entity_id,
-            "metadata_json": log.metadata_json, "created_at": log.created_at,
-            "user_name": log.user.full_name if log.user else None,
-        })
-    return result
+    return [_build_activity(log) for log in logs]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -661,21 +660,7 @@ def get_tasks(db: Session = Depends(get_db), user: User = Depends(get_optional_u
               assigned_to: Optional[int] = Query(None),
               status: Optional[str] = Query(None),
               archived: bool = Query(False)):
-    q = db.query(Task)
-
-    if user:
-        if user.org_id:
-            # Show tasks in user's org OR personally owned tasks without an org
-            q = q.filter(
-                (Task.org_id == user.org_id) |
-                ((Task.org_id == None) & (Task.user_id == user.user_id))
-            )
-        else:
-            # User has no org — only show their own tasks
-            q = q.filter(Task.user_id == user.user_id)
-    else:
-        # No auth — show nothing (or only orphaned tasks with no user)
-        q = q.filter(Task.user_id == None, Task.org_id == None)
+    q = db.query(Task).filter(_user_task_filter(user))
 
     if team_id:
         q = q.filter(Task.team_id == team_id)
@@ -692,45 +677,58 @@ def get_tasks(db: Session = Depends(get_db), user: User = Depends(get_optional_u
 
 @app.get("/tasks/suggestions", response_model=SuggestionsResponse)
 def get_suggestions(db: Session = Depends(get_db), user: User = Depends(get_optional_user)):
-    q = db.query(Task).filter(Task.status != "Completed")
-    if user:
-        if user.org_id:
-            q = q.filter(
-                (Task.org_id == user.org_id) |
-                ((Task.org_id == None) & (Task.user_id == user.user_id))
-            )
-        else:
-            q = q.filter(Task.user_id == user.user_id)
-    else:
-        q = q.filter(Task.user_id == None, Task.org_id == None)
+    q = db.query(Task).filter(Task.status != "Completed", _user_task_filter(user))
     tasks = q.all()
 
-    scored: list[PrioritySuggestion] = []
+    scored: List[PrioritySuggestion] = []
     for t in tasks:
-        task_data = {
-            "priority": t.priority,
-            "category": t.category or "General",
-            "deadline_gap": _hours_until_deadline(t.deadline),
-            "estimated_time": t.estimated_time or 1.0,
-        }
-        try:
-            result = call_ml_endpoint(task_data)
-            scored.append(PrioritySuggestion(
-                task_id=t.task_id,
-                task_name=t.task_name,
-                suggested_priority=result["suggested_priority"],
-                predicted_time=result["predicted_completion_time"],
-                confidence=result["priority_confidence"],
-                do_this="",
-            ))
-        except Exception as e:
-            logger.warning("ML prediction failed for task %s: %s", t.task_id, e)
+        hours_left = _hours_until_deadline(t.deadline)
 
-    # Sort by confidence descending, take top 5
+        # Try Azure ML endpoint first
+        try:
+            result = call_ml_endpoint({
+                "priority": t.priority,
+                "category": t.category or "General",
+                "deadline_gap": hours_left,
+                "estimated_time": t.estimated_time or 1.0,
+            })
+            scored.append(PrioritySuggestion(
+                task_id=t.task_id, task_name=t.task_name,
+                suggested_priority=result["suggested_priority"],
+                reason="ML model recommendation",
+                predicted_time=result["predicted_completion_time"],
+                confidence=result["priority_confidence"], do_this="",
+            ))
+            continue
+        except Exception:
+            pass
+
+        # Local fallback: rule-based priority suggestion
+        model = _get_model("priority_model.pkl")
+        if model:
+            try:
+                features = [[_priority_score(t.priority), t.estimated_time or 1, hours_left]]
+                pred = model.predict(features)[0]
+                suggested = {3: "High", 2: "Medium", 1: "Low"}.get(int(pred), t.priority)
+            except Exception:
+                suggested = t.priority
+        elif t.deadline:
+            suggested = "High" if hours_left < 24 else "Medium" if hours_left < 72 else t.priority
+        else:
+            suggested = t.priority
+
+        if suggested != t.priority:
+            reason = "Deadline approaching soon" if suggested == "High" else "Adjusted based on workload patterns"
+            scored.append(PrioritySuggestion(
+                task_id=t.task_id, task_name=t.task_name,
+                suggested_priority=suggested,
+                reason=reason,
+                predicted_time=t.estimated_time or 1.0,
+                confidence=0.7, do_this="",
+            ))
+
     scored.sort(key=lambda s: s.confidence, reverse=True)
     top = scored[:5]
-
-    # Assign ordering labels
     ordinals = ["first", "second", "third", "fourth", "fifth"]
     for i, s in enumerate(top):
         s.do_this = ordinals[i]
@@ -803,7 +801,6 @@ def bulk_assign(task_ids: List[int], assigned_to: int,
         task = db.query(Task).filter(Task.task_id == tid).first()
         if task:
             task.assigned_to = assigned_to
-    db.commit()
     if assigned_to != user.user_id:
         target = db.query(User).filter(User.user_id == assigned_to).first()
         if target:
@@ -872,8 +869,8 @@ def predict_time(task_id: int, db: Session = Depends(get_db)):
                     predicted_time=round(predicted, 2), confidence=0.85,
                     your_estimate=task.estimated_time, recommendation="Based on local ML model",
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Local ML prediction failed for task %s: %s", task.task_id, e)
         return TimePrediction(
             task_id=task.task_id, task_name=task.task_name,
             predicted_time=task.estimated_time or 1.0, confidence=0.5,
@@ -1001,20 +998,22 @@ def delete_comment(task_id: int, comment_id: int, db: Session = Depends(get_db),
 @app.get("/tasks/{task_id}/reactions", response_model=List[ReactionResponse])
 def get_reactions(task_id: int, db: Session = Depends(get_db), user: User = Depends(get_optional_user)):
     reactions = db.query(TaskReaction).filter(TaskReaction.task_id == task_id).all()
+    # Batch-fetch all user names in one query
+    user_ids = {r.user_id for r in reactions}
+    users_by_id = {u.user_id: u.full_name for u in db.query(User).filter(User.user_id.in_(user_ids)).all()} if user_ids else {}
+    current_uid = user.user_id if user else -1
+
     emoji_map: Dict[str, list] = {}
     for r in reactions:
-        if r.emoji not in emoji_map:
-            emoji_map[r.emoji] = []
-        emoji_map[r.emoji].append(r)
-    result = []
-    for emoji, items in emoji_map.items():
-        users = [db.query(User).filter(User.user_id == r.user_id).first() for r in items]
-        user_names = [u.full_name for u in users if u]
-        reacted_by_me = any(r.user_id == (user.user_id if user else -1) for r in items)
-        result.append(ReactionResponse(
-            emoji=emoji, count=len(items), users=user_names, reacted_by_me=reacted_by_me,
-        ))
-    return result
+        emoji_map.setdefault(r.emoji, []).append(r)
+    return [
+        ReactionResponse(
+            emoji=emoji, count=len(items),
+            users=[users_by_id[r.user_id] for r in items if r.user_id in users_by_id],
+            reacted_by_me=any(r.user_id == current_uid for r in items),
+        )
+        for emoji, items in emoji_map.items()
+    ]
 
 
 @app.post("/tasks/{task_id}/reactions", status_code=201)
@@ -1102,42 +1101,43 @@ def mark_all_read(user: User = Depends(get_current_user), db: Session = Depends(
 @app.get("/teams/{team_id}/workload")
 def get_team_workload(team_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     members = db.query(TeamMember).filter(TeamMember.team_id == team_id).all()
-    result = []
-    for m in members:
-        u = db.query(User).filter(User.user_id == m.user_id).first()
-        pending = db.query(func.count(Task.task_id)).filter(
-            Task.assigned_to == m.user_id, Task.status != "Completed"
-        ).scalar()
-        completed = db.query(func.count(Task.task_id)).filter(
-            Task.assigned_to == m.user_id, Task.status == "Completed"
-        ).scalar()
-        total_estimated = db.query(func.sum(Task.estimated_time)).filter(
-            Task.assigned_to == m.user_id, Task.status != "Completed"
-        ).scalar() or 0
-        result.append({
+    user_ids = [m.user_id for m in members]
+    if not user_ids:
+        return []
+
+    users_by_id = {u.user_id: u for u in db.query(User).filter(User.user_id.in_(user_ids)).all()}
+
+    # Batch query: get counts for all members in 2 queries instead of 3*N
+    from sqlalchemy import case
+    stats = db.query(
+        Task.assigned_to,
+        func.count(case((Task.status != "Completed", 1))).label("pending"),
+        func.count(case((Task.status == "Completed", 1))).label("completed"),
+        func.sum(case((Task.status != "Completed", Task.estimated_time), else_=0)).label("est"),
+    ).filter(
+        Task.assigned_to.in_(user_ids)
+    ).group_by(Task.assigned_to).all()
+
+    stats_map = {s[0]: {"pending": s.pending, "completed": s.completed, "est": s.est or 0} for s in stats}
+
+    return [
+        {
             "user_id": m.user_id,
-            "full_name": u.full_name if u else "Unknown",
-            "avatar_url": u.avatar_url if u else None,
-            "pending_tasks": pending or 0,
-            "completed_tasks": completed or 0,
-            "total_estimated_hours": round(float(total_estimated), 1),
-        })
-    return result
+            "full_name": users_by_id[m.user_id].full_name if m.user_id in users_by_id else "Unknown",
+            "avatar_url": users_by_id[m.user_id].avatar_url if m.user_id in users_by_id else None,
+            "pending_tasks": stats_map.get(m.user_id, {}).get("pending", 0),
+            "completed_tasks": stats_map.get(m.user_id, {}).get("completed", 0),
+            "total_estimated_hours": round(float(stats_map.get(m.user_id, {}).get("est", 0)), 1),
+        }
+        for m in members
+    ]
 
 
 @app.get("/ai/weekly-digest")
 def weekly_digest(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from datetime import timedelta
     week_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
-    q = db.query(Task)
-    if user.org_id:
-        q = q.filter(
-            (Task.org_id == user.org_id) |
-            ((Task.org_id == None) & (Task.user_id == user.user_id))
-        )
-    else:
-        q = q.filter(Task.user_id == user.user_id)
+    q = db.query(Task).filter(_user_task_filter(user))
 
     completed_this_week = q.filter(Task.status == "Completed", Task.created_at >= week_ago).count()
     created_this_week = q.filter(Task.created_at >= week_ago).count()
@@ -1152,16 +1152,9 @@ def weekly_digest(user: User = Depends(get_current_user), db: Session = Depends(
     contributors = db.query(
         User.full_name, func.count(Task.task_id).label("count")
     ).join(Task, Task.assigned_to == User.user_id).filter(
-        Task.status == "Completed", Task.created_at >= week_ago
-    )
-    if user.org_id:
-        contributors = contributors.filter(
-            (Task.org_id == user.org_id) |
-            ((Task.org_id == None) & (Task.user_id == user.user_id))
-        )
-    else:
-        contributors = contributors.filter(Task.user_id == user.user_id)
-    contributors = contributors.group_by(User.full_name).order_by(func.count(Task.task_id).desc()).limit(3).all()
+        Task.status == "Completed", Task.created_at >= week_ago,
+        _user_task_filter(user),
+    ).group_by(User.full_name).order_by(func.count(Task.task_id).desc()).limit(3).all()
 
     return {
         "period": "Last 7 days",
@@ -1181,6 +1174,91 @@ def weekly_digest(user: User = Depends(get_current_user), db: Session = Depends(
 # ══════════════════════════════════════════════════════════════════════════════
 #  DEBUG
 # ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/dashboard")
+def dashboard_data(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Combined endpoint: returns tasks, suggestions, and digest in one call."""
+    # Tasks
+    q = db.query(Task).filter(_user_task_filter(user))
+    all_tasks = q.order_by(Task.created_at.desc()).all()
+    tasks_data = [_build_task_response(t, db, user.user_id) for t in all_tasks]
+
+    # Suggestions (inline, skip Azure ML for speed — use local model only)
+    pending_tasks = [t for t in all_tasks if t.status != "Completed"]
+    scored: List[PrioritySuggestion] = []
+    model = _get_model("priority_model.pkl")
+    for t in pending_tasks:
+        hours_left = _hours_until_deadline(t.deadline)
+        if model:
+            try:
+                features = [[_priority_score(t.priority), t.estimated_time or 1, hours_left]]
+                pred = model.predict(features)[0]
+                suggested = {3: "High", 2: "Medium", 1: "Low"}.get(int(pred), t.priority)
+            except Exception:
+                suggested = t.priority
+        elif t.deadline:
+            suggested = "High" if hours_left < 24 else "Medium" if hours_left < 72 else t.priority
+        else:
+            suggested = t.priority
+        if suggested != t.priority:
+            reason = "Deadline approaching soon" if suggested == "High" else "Adjusted based on workload patterns"
+            scored.append(PrioritySuggestion(
+                task_id=t.task_id, task_name=t.task_name,
+                suggested_priority=suggested, reason=reason,
+                predicted_time=t.estimated_time or 1.0, confidence=0.7, do_this="",
+            ))
+    scored.sort(key=lambda s: s.confidence, reverse=True)
+    top = scored[:5]
+    ordinals = ["first", "second", "third", "fourth", "fifth"]
+    for i, s in enumerate(top):
+        s.do_this = ordinals[i]
+
+    # Weekly digest (inline) — use naive datetime for SQLite compatibility
+    now_naive = datetime.utcnow()
+    week_ago = now_naive - timedelta(days=7)
+    def _ts(dt):
+        """Strip timezone info for safe comparison with SQLite naive datetimes."""
+        return dt.replace(tzinfo=None) if dt and dt.tzinfo else dt
+    completed_this_week = sum(1 for t in all_tasks if t.status == "Completed" and t.created_at and _ts(t.created_at) >= week_ago)
+    created_this_week = sum(1 for t in all_tasks if t.created_at and _ts(t.created_at) >= week_ago)
+    pending_count = sum(1 for t in all_tasks if t.status != "Completed")
+    overdue_count = sum(1 for t in all_tasks if t.deadline and t.status != "Completed" and _ts(t.deadline) < now_naive)
+
+    contributors = db.query(
+        User.full_name, func.count(Task.task_id).label("count")
+    ).join(Task, Task.assigned_to == User.user_id).filter(
+        Task.status == "Completed", Task.created_at >= week_ago,
+        _user_task_filter(user),
+    ).group_by(User.full_name).order_by(func.count(Task.task_id).desc()).limit(3).all()
+
+    insights = []
+    if completed_this_week > 0:
+        insights.append(f"{completed_this_week} tasks completed this week")
+    else:
+        insights.append("No tasks completed this week")
+    if overdue_count > 0:
+        insights.append(f"{overdue_count} overdue tasks need attention")
+    else:
+        insights.append("No overdue tasks!")
+    if pending_count > 0:
+        insights.append(f"{pending_count} tasks still in progress")
+    else:
+        insights.append("All caught up!")
+
+    return {
+        "tasks": tasks_data,
+        "suggestions": [s.model_dump() for s in top],
+        "digest": {
+            "period": "Last 7 days",
+            "completed": completed_this_week,
+            "created": created_this_week,
+            "pending": pending_count,
+            "overdue": overdue_count,
+            "top_contributors": [{"name": c[0], "completed": c[1]} for c in contributors],
+            "insights": insights,
+        },
+    }
+
 
 @app.get("/debug/db-info")
 def debug_db_info():

@@ -34,7 +34,9 @@ const NotificationDropdown: React.FC = () => {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 30000);
+    const interval = setInterval(() => {
+      if (!document.hidden) load();
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 

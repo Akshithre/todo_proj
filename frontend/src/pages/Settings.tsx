@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  User, Mail, Shield, Download, Trash2, Moon, Sun,
-  Clock, Flag, Bell, ChevronRight, AlertTriangle, Loader2,
-  Building2, Lock,
+  Download, Trash2, Moon, Sun,
+  Clock, Flag, Bell, AlertTriangle, Loader2,
+  Lock,
 } from "lucide-react";
 import PageWrapper from "../components/PageWrapper";
 import InitialsAvatar from "../components/InitialsAvatar";
@@ -112,8 +112,8 @@ const Settings: React.FC = () => {
   };
 
   const handleDeleteAccount = () => {
-    localStorage.clear();
-    toast.success("Account deleted");
+    // No backend delete-account endpoint exists yet — just log out
+    toast("Account deletion is not yet supported. Logging out instead.", { icon: "⚠️" });
     logout();
   };
 
