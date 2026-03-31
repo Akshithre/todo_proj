@@ -1337,6 +1337,19 @@ def dashboard_data(user: User = Depends(get_current_user), db: Session = Depends
     }
 
 
+@app.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    """Health check endpoint for monitoring and load balancers."""
+    status = {"status": "healthy", "version": app.version, "timestamp": datetime.now(timezone.utc).isoformat()}
+    try:
+        db.execute(func.now() if engine.dialect.name != "sqlite" else func.date("now"))
+        status["database"] = "connected"
+    except Exception:
+        status["status"] = "degraded"
+        status["database"] = "disconnected"
+    return status
+
+
 @app.get("/debug/db-info")
 def debug_db_info():
     try:
