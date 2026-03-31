@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "azure-sql-db": {
+      "type": "stdio",
+      "command": "py",
+      "args": [
+        "C:/Users/pooji/OneDrive/Desktop/todo_proj/todo_proj/mcp_db_server.py"
+      ],
+      "env": {}
+    },
+    "google-sheets": {
+      "type": "stdio",
+      "command": "py",
+      "args": [
+        "C:/Users/pooji/OneDrive/Desktop/todo_proj/todo_proj/mcp_sheets_server.py"
+      ],
+      "env": {}
+    }
+  }
+}

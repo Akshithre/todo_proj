@@ -29,3 +29,5 @@ Thumbs.db
 
 # SQLite dev databases
 *.db
+
+google_credentials.json

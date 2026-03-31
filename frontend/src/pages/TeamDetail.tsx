@@ -82,15 +82,19 @@ const TeamDetailPage: React.FC = () => {
     if (!email.trim()) return;
     setAdding(true);
     try {
-      await addTeamMember(teamId, email.trim());
-      toast.success("Member added!");
+      const res = await addTeamMember(teamId, email.trim());
+      if (res.detail === "invite_sent") {
+        toast.success(`Invite email sent to ${res.email}! They'll join once they accept.`, { duration: 5000 });
+      } else if (res.detail === "invite_created") {
+        toast.success(res.message || "Invite created. Share the link manually.", { duration: 5000 });
+      } else {
+        toast.success("Member added!");
+        load();
+      }
       setEmail("");
-      load();
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
-      if (detail === "User not found") {
-        toast.error("No account found for that email. They need to register first.");
-      } else if (detail === "Already a member") {
+      if (detail === "Already a member") {
         toast.error("This user is already a member of this team.");
       } else {
         toast.error(detail || "Failed to add member");
