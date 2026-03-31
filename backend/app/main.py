@@ -14,10 +14,10 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session, joinedload, subqueryload
-from sqlalchemy import func, case
+from sqlalchemy import func, case, select, text
 from dotenv import load_dotenv
 
-from .database import engine, get_db, Base, DATABASE_URL
+from .database import engine, get_db, Base, DATABASE_URL, SessionLocal
 from .models import (
     Task, User, Organization, Team, TeamMember,
     TaskComment, TaskReaction, TaskMention, Notification,
@@ -1335,6 +1335,23 @@ def dashboard_data(user: User = Depends(get_current_user), db: Session = Depends
             "insights": insights,
         },
     }
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for monitoring and load balancers."""
+    status = {"status": "healthy", "version": app.version, "timestamp": datetime.now(timezone.utc).isoformat()}
+    try:
+        db = SessionLocal()
+        try:
+            db.execute(select(func.now()) if engine.dialect.name != "sqlite" else text("SELECT 1"))
+            status["database"] = "connected"
+        finally:
+            db.close()
+    except Exception:
+        status["status"] = "degraded"
+        status["database"] = "disconnected"
+    return status
 
 
 @app.get("/debug/db-info")
