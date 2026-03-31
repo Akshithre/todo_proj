@@ -49,6 +49,7 @@ from .auth import (
     get_current_user, get_optional_user,
     require_org_admin, require_superadmin,
 )
+from .email_service import send_invite_email
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -608,15 +609,48 @@ def delete_team(team_id: int, user: User = Depends(require_org_admin), db: Sessi
     return {"detail": "Team deleted"}
 
 
-@app.post("/teams/{team_id}/members", response_model=TeamMemberResponse)
+@app.post("/teams/{team_id}/members")
 def add_team_member(team_id: int, req: AddMemberRequest, user: User = Depends(get_current_user),
                     db: Session = Depends(get_db)):
     team = db.query(Team).filter(Team.team_id == team_id).first()
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
+    org = db.query(Organization).filter(Organization.org_id == team.org_id).first()
     target = db.query(User).filter(User.email == req.email).first()
+
     if not target:
-        raise HTTPException(status_code=404, detail="User not found")
+        # User doesn't exist — send invite email instead
+        token_str = uuid.uuid4().hex
+        invite = InviteToken(
+            token=token_str, org_id=team.org_id,
+            team_id=team_id, email=req.email,
+            created_by=user.user_id,
+        )
+        db.add(invite)
+        _log_activity(db, user, "invite_sent", "team", team_id,
+                      {"email": req.email}, team_id)
+        db.commit()
+        org_name = org.name if org else "your organization"
+        sent = send_invite_email(
+            to_email=req.email,
+            inviter_name=user.full_name,
+            org_name=org_name,
+            team_name=team.name,
+            invite_token=token_str,
+        )
+        if sent:
+            return JSONResponse(
+                status_code=201,
+                content={"detail": "invite_sent", "email": req.email},
+            )
+        else:
+            return JSONResponse(
+                status_code=201,
+                content={"detail": "invite_created", "email": req.email,
+                         "message": "Invite created but email delivery failed. Share the link manually."},
+            )
+
+    # User exists — add directly
     existing = db.query(TeamMember).filter(
         TeamMember.team_id == team_id, TeamMember.user_id == target.user_id
     ).first()
