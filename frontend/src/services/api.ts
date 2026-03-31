@@ -7,7 +7,7 @@ import {
 } from "../types";
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || `http://${window.location.hostname}:8001`,
+  baseURL: process.env.REACT_APP_API_URL || `http://${window.location.hostname}:8000`,
 });
 
 // Attach JWT token to every request
