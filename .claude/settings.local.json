@@ -32,7 +32,14 @@
       "Bash(taskkill.exe //F //PID 5196)",
       "Bash(taskkill.exe //F //PID 6840)",
       "Bash(py -m uvicorn app.main:app --host 0.0.0.0 --port 8000)",
-      "Bash(py:*)"
+      "Bash(py:*)",
+      "mcp__azure-sql-db__query_database",
+      "mcp__azure-sql-db__describe_table",
+      "mcp__google-sheets__export_weekly_summary"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "azure-sql-db"
+  ]
 }
