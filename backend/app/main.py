@@ -13,8 +13,8 @@ from pathlib import Path
 from fastapi import FastAPI, Depends, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload, subqueryload
+from sqlalchemy import func, case
 from dotenv import load_dotenv
 
 from .database import engine, get_db, Base, DATABASE_URL
@@ -209,7 +209,8 @@ def _build_activity(log: ActivityLog) -> dict:
     }
 
 
-def _build_task_response(task: Task, db: Session, current_user_id: int = None) -> dict:
+def _build_task_response(task: Task, db: Session, current_user_id: int = None,
+                         comment_counts: dict = None, reaction_counts: dict = None) -> dict:
     data = {
         "task_id": task.task_id,
         "task_name": task.task_name,
@@ -229,14 +230,41 @@ def _build_task_response(task: Task, db: Session, current_user_id: int = None) -
         "is_archived": task.is_archived or False,
         "creator_name": task.creator.full_name if task.creator else None,
         "assignee_name": task.assignee.full_name if task.assignee else None,
-        "comment_count": db.query(func.count(TaskComment.comment_id)).filter(TaskComment.task_id == task.task_id).scalar() or 0,
     }
-    # Reaction counts
-    reactions = db.query(TaskReaction.emoji, func.count(TaskReaction.reaction_id)).filter(
-        TaskReaction.task_id == task.task_id
-    ).group_by(TaskReaction.emoji).all()
-    data["reaction_counts"] = {emoji: count for emoji, count in reactions}
+    # Use pre-fetched counts if available, otherwise query (single-task endpoints)
+    if comment_counts is not None:
+        data["comment_count"] = comment_counts.get(task.task_id, 0)
+    else:
+        data["comment_count"] = db.query(func.count(TaskComment.comment_id)).filter(TaskComment.task_id == task.task_id).scalar() or 0
+    if reaction_counts is not None:
+        data["reaction_counts"] = reaction_counts.get(task.task_id, {})
+    else:
+        reactions = db.query(TaskReaction.emoji, func.count(TaskReaction.reaction_id)).filter(
+            TaskReaction.task_id == task.task_id
+        ).group_by(TaskReaction.emoji).all()
+        data["reaction_counts"] = {emoji: count for emoji, count in reactions}
     return data
+
+
+def _batch_task_counts(db: Session, task_ids: list) -> tuple:
+    """Pre-fetch comment counts and reaction counts for a list of tasks in 2 queries."""
+    if not task_ids:
+        return {}, {}
+    # Comment counts: one query
+    cc_rows = db.query(
+        TaskComment.task_id, func.count(TaskComment.comment_id)
+    ).filter(TaskComment.task_id.in_(task_ids)).group_by(TaskComment.task_id).all()
+    comment_counts = {tid: cnt for tid, cnt in cc_rows}
+    # Reaction counts: one query
+    rc_rows = db.query(
+        TaskReaction.task_id, TaskReaction.emoji, func.count(TaskReaction.reaction_id)
+    ).filter(TaskReaction.task_id.in_(task_ids)).group_by(
+        TaskReaction.task_id, TaskReaction.emoji
+    ).all()
+    reaction_counts: dict = {}
+    for tid, emoji, cnt in rc_rows:
+        reaction_counts.setdefault(tid, {})[emoji] = cnt
+    return comment_counts, reaction_counts
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -428,13 +456,17 @@ def update_my_org(req: OrgUpdate, user: User = Depends(require_org_admin), db: S
 def get_org_stats(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not user.org_id:
         raise HTTPException(status_code=404, detail="No organization")
+    oid = user.org_id
+    # Single query for task stats
+    task_stats = db.query(
+        func.count(Task.task_id),
+        func.count(case((Task.status == "Completed", 1))),
+    ).filter(Task.org_id == oid).first()
     return OrgStats(
-        member_count=db.query(func.count(User.user_id)).filter(User.org_id == user.org_id).scalar(),
-        team_count=db.query(func.count(Team.team_id)).filter(Team.org_id == user.org_id).scalar(),
-        task_count=db.query(func.count(Task.task_id)).filter(Task.org_id == user.org_id).scalar(),
-        completed_count=db.query(func.count(Task.task_id)).filter(
-            Task.org_id == user.org_id, Task.status == "Completed"
-        ).scalar(),
+        member_count=db.query(func.count(User.user_id)).filter(User.org_id == oid).scalar(),
+        team_count=db.query(func.count(Team.team_id)).filter(Team.org_id == oid).scalar(),
+        task_count=task_stats[0] or 0,
+        completed_count=task_stats[1] or 0,
     )
 
 
@@ -467,7 +499,7 @@ def get_org_activity(
 ):
     if not user.org_id:
         return []
-    logs = db.query(ActivityLog).filter(
+    logs = db.query(ActivityLog).options(joinedload(ActivityLog.user)).filter(
         ActivityLog.org_id == user.org_id
     ).order_by(ActivityLog.created_at.desc()).limit(limit).all()
     return [_build_activity(log) for log in logs]
@@ -482,14 +514,27 @@ def list_teams(user: User = Depends(get_current_user), db: Session = Depends(get
     if not user.org_id:
         return []
     teams = db.query(Team).filter(Team.org_id == user.org_id).all()
-    result = []
-    for t in teams:
-        result.append({
+    if not teams:
+        return []
+    team_ids = [t.team_id for t in teams]
+    # Batch member counts
+    mc_rows = db.query(
+        TeamMember.team_id, func.count(TeamMember.id)
+    ).filter(TeamMember.team_id.in_(team_ids)).group_by(TeamMember.team_id).all()
+    member_counts = {tid: cnt for tid, cnt in mc_rows}
+    # Batch task counts
+    tc_rows = db.query(
+        Task.team_id, func.count(Task.task_id)
+    ).filter(Task.team_id.in_(team_ids)).group_by(Task.team_id).all()
+    task_counts = {tid: cnt for tid, cnt in tc_rows}
+    return [
+        {
             **{c.name: getattr(t, c.name) for c in t.__table__.columns},
-            "member_count": db.query(func.count(TeamMember.id)).filter(TeamMember.team_id == t.team_id).scalar(),
-            "task_count": db.query(func.count(Task.task_id)).filter(Task.team_id == t.team_id).scalar(),
-        })
-    return result
+            "member_count": member_counts.get(t.team_id, 0),
+            "task_count": task_counts.get(t.team_id, 0),
+        }
+        for t in teams
+    ]
 
 
 @app.post("/teams", response_model=TeamResponse, status_code=201)
@@ -619,7 +664,7 @@ def update_member_role(team_id: int, user_id: int, req: UpdateMemberRoleRequest,
 @app.get("/teams/{team_id}/activity", response_model=List[ActivityResponse])
 def get_team_activity(team_id: int, user: User = Depends(get_current_user),
                       db: Session = Depends(get_db), limit: int = Query(50, le=200)):
-    logs = db.query(ActivityLog).filter(
+    logs = db.query(ActivityLog).options(joinedload(ActivityLog.user)).filter(
         ActivityLog.team_id == team_id
     ).order_by(ActivityLog.created_at.desc()).limit(limit).all()
     return [_build_activity(log) for log in logs]
@@ -660,7 +705,11 @@ def get_tasks(db: Session = Depends(get_db), user: User = Depends(get_optional_u
               assigned_to: Optional[int] = Query(None),
               status: Optional[str] = Query(None),
               archived: bool = Query(False)):
-    q = db.query(Task).filter(_user_task_filter(user))
+    import time as _t
+    _t0 = _t.time()
+    q = db.query(Task).options(
+        joinedload(Task.creator), joinedload(Task.assignee)
+    ).filter(_user_task_filter(user))
 
     if team_id:
         q = q.filter(Task.team_id == team_id)
@@ -672,7 +721,16 @@ def get_tasks(db: Session = Depends(get_db), user: User = Depends(get_optional_u
         q = q.filter((Task.is_archived == False) | (Task.is_archived == None))
 
     tasks = q.order_by(Task.created_at.desc()).all()
-    return [_build_task_response(t, db, user.user_id if user else None) for t in tasks]
+    logger.info("PERF tasks query: %.2fs, count=%d", _t.time()-_t0, len(tasks))
+    _t1 = _t.time()
+    task_ids = [t.task_id for t in tasks]
+    comment_counts, reaction_counts = _batch_task_counts(db, task_ids)
+    logger.info("PERF batch counts: %.2fs", _t.time()-_t1)
+    _t2 = _t.time()
+    result = [_build_task_response(t, db, user.user_id if user else None,
+                                 comment_counts, reaction_counts) for t in tasks]
+    logger.info("PERF build responses: %.2fs, TOTAL: %.2fs", _t.time()-_t2, _t.time()-_t0)
+    return result
 
 
 @app.get("/tasks/suggestions", response_model=SuggestionsResponse)
@@ -681,30 +739,11 @@ def get_suggestions(db: Session = Depends(get_db), user: User = Depends(get_opti
     tasks = q.all()
 
     scored: List[PrioritySuggestion] = []
+    model = _get_model("priority_model.pkl")
     for t in tasks:
         hours_left = _hours_until_deadline(t.deadline)
 
-        # Try Azure ML endpoint first
-        try:
-            result = call_ml_endpoint({
-                "priority": t.priority,
-                "category": t.category or "General",
-                "deadline_gap": hours_left,
-                "estimated_time": t.estimated_time or 1.0,
-            })
-            scored.append(PrioritySuggestion(
-                task_id=t.task_id, task_name=t.task_name,
-                suggested_priority=result["suggested_priority"],
-                reason="ML model recommendation",
-                predicted_time=result["predicted_completion_time"],
-                confidence=result["priority_confidence"], do_this="",
-            ))
-            continue
-        except Exception:
-            pass
-
-        # Local fallback: rule-based priority suggestion
-        model = _get_model("priority_model.pkl")
+        # Use local model first (fast), Azure ML only for single-task predict-time
         if model:
             try:
                 features = [[_priority_score(t.priority), t.estimated_time or 1, hours_left]]
@@ -1108,7 +1147,6 @@ def get_team_workload(team_id: int, user: User = Depends(get_current_user), db: 
     users_by_id = {u.user_id: u for u in db.query(User).filter(User.user_id.in_(user_ids)).all()}
 
     # Batch query: get counts for all members in 2 queries instead of 3*N
-    from sqlalchemy import case
     stats = db.query(
         Task.assigned_to,
         func.count(case((Task.status != "Completed", 1))).label("pending"),
@@ -1178,10 +1216,15 @@ def weekly_digest(user: User = Depends(get_current_user), db: Session = Depends(
 @app.get("/dashboard")
 def dashboard_data(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Combined endpoint: returns tasks, suggestions, and digest in one call."""
-    # Tasks
-    q = db.query(Task).filter(_user_task_filter(user))
+    # Tasks - eager load relationships
+    q = db.query(Task).options(
+        joinedload(Task.creator), joinedload(Task.assignee)
+    ).filter(_user_task_filter(user))
     all_tasks = q.order_by(Task.created_at.desc()).all()
-    tasks_data = [_build_task_response(t, db, user.user_id) for t in all_tasks]
+    # Batch-fetch counts in 2 queries instead of 2*N
+    task_ids = [t.task_id for t in all_tasks]
+    comment_counts, reaction_counts = _batch_task_counts(db, task_ids)
+    tasks_data = [_build_task_response(t, db, user.user_id, comment_counts, reaction_counts) for t in all_tasks]
 
     # Suggestions (inline, skip Azure ML for speed — use local model only)
     pending_tasks = [t for t in all_tasks if t.status != "Completed"]
