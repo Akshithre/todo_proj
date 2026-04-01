@@ -14,6 +14,10 @@ param sqlAdminPassword string
 @description('App Service Plan SKU')
 param appServiceSku string = 'B1'
 
+@description('JWT secret key for token signing')
+@secure()
+param jwtSecretKey string
+
 // ── Variables ────────────────────────────────────────────────────────────────
 
 var uniqueSuffix = uniqueString(resourceGroup().id)
@@ -49,8 +53,16 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
     serverFarmId: appServicePlan.id
     siteConfig: {
       linuxFxVersion: 'PYTHON|3.11'
-      appCommandLine: 'uvicorn app.main:app --host 0.0.0.0 --port 8000'
+      appCommandLine: 'gunicorn -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 app.main:app'
       appSettings: [
+        {
+          name: 'WEBSITES_PORT'
+          value: '8000'
+        }
+        {
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: 'true'
+        }
         {
           name: 'DATABASE_URL'
           value: 'mssql+pyodbc://${sqlAdminUser}:${sqlAdminPassword}@${sqlServer.properties.fullyQualifiedDomainName}/${sqlDatabaseName}?driver=ODBC+Driver+18+for+SQL+Server'
@@ -62,6 +74,10 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'AZURE_STORAGE_CONTAINER'
           value: blobContainerName
+        }
+        {
+          name: 'JWT_SECRET_KEY'
+          value: jwtSecretKey
         }
         {
           name: 'ALLOWED_ORIGINS'
