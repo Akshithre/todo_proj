@@ -11,6 +11,9 @@ venv/
 # ML model files (too large for git)
 *.pkl
 
+# Raw Kaggle datasets (download separately, not committed)
+ml/kaggle_data/*.csv
+
 # Node
 node_modules/
 build/

@@ -1,5 +1,16 @@
 """
-Generate 500 sample tasks, save to CSV locally, and upload to Azure Blob Storage.
+Generate training data for ML models.
+
+Primary source: Real-world Kaggle dataset (Employee Performance and Productivity Data)
+               transformed into task-level records via load_kaggle_data.py
+Fallback:      Synthetic data generation (used only when the Kaggle dataset is unavailable)
+
+Usage:
+  # Preferred — uses real Kaggle data:
+  python load_kaggle_data.py
+
+  # Fallback — generates synthetic data:
+  python generate_sample_data.py
 """
 import os
 import random
@@ -29,10 +40,12 @@ TASK_NAMES = [
 PRIORITIES = ["High", "Medium", "Low"]
 CATEGORIES = ["Work", "Personal", "Study", "Health"]
 
-CSV_PATH = os.path.join(os.path.dirname(__file__), "tasks_data.csv")
+ML_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(ML_DIR, "tasks_data.csv")
 
 
-def generate_tasks(n: int = 500) -> pd.DataFrame:
+def generate_synthetic_tasks(n: int = 500) -> pd.DataFrame:
+    """Generate synthetic task data as a fallback when real data is unavailable."""
     random.seed(42)
     now = datetime.now()
     six_months_ago = now - timedelta(days=180)
@@ -99,16 +112,23 @@ def upload_to_blob(csv_path: str) -> None:
 
 def print_summary(df: pd.DataFrame) -> None:
     print("\n--- Summary ---")
-    print(f"Total tasks generated: {len(df)}")
+    print(f"Total tasks: {len(df)}")
     print(f"\nPriority distribution:\n{df['priority'].value_counts().to_string()}")
     print(f"\nCategory distribution:\n{df['category'].value_counts().to_string()}")
     print(f"\nAverage actual completion time: {df['actual_time'].mean():.2f} hours")
 
 
 def main():
-    df = generate_tasks(500)
+    # Try real Kaggle data first
+    kaggle_csv = os.path.join(ML_DIR, "kaggle_data", "Extended_Employee_Performance_and_Productivity_Data.csv")
+    if os.path.exists(kaggle_csv):
+        print("Real Kaggle dataset found — use 'python load_kaggle_data.py' instead.")
+        print("Running synthetic generation as fallback...\n")
+
+    print("Generating synthetic training data (fallback mode)...")
+    df = generate_synthetic_tasks(500)
     df.to_csv(CSV_PATH, index=False)
-    print(f"Saved {len(df)} tasks to {CSV_PATH}")
+    print(f"Saved {len(df)} synthetic tasks to {CSV_PATH}")
 
     upload_to_blob(CSV_PATH)
     print_summary(df)
