@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, User, Mail, Lock, Eye, EyeOff, Loader2, Check,
-  ArrowRight, ArrowLeft, Building2, Ticket, Sparkles, Rocket,
+  ArrowRight, ArrowLeft, Building2, Sparkles, Rocket,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
@@ -20,11 +20,7 @@ const stepVariants = {
   exit: (direction: number) => ({ x: direction > 0 ? -60 : 60, opacity: 0 }),
 };
 
-interface RegisterProps {
-  prefillInviteToken?: string;
-}
-
-const Register: React.FC<RegisterProps> = ({ prefillInviteToken }) => {
+const Register: React.FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -39,11 +35,7 @@ const Register: React.FC<RegisterProps> = ({ prefillInviteToken }) => {
   const [showPw, setShowPw] = useState(false);
 
   // Step 2 fields
-  const [orgMode, setOrgMode] = useState<"create" | "invite">(
-    prefillInviteToken ? "invite" : "create"
-  );
   const [orgName, setOrgName] = useState("");
-  const [inviteToken, setInviteToken] = useState(prefillInviteToken || "");
 
   const [loading, setLoading] = useState(false);
 
@@ -71,12 +63,8 @@ const Register: React.FC<RegisterProps> = ({ prefillInviteToken }) => {
   };
 
   const canAdvanceStep2 = () => {
-    if (orgMode === "create" && !orgName.trim()) {
+    if (!orgName.trim()) {
       toast.error("Please enter an organization name");
-      return false;
-    }
-    if (orgMode === "invite" && !inviteToken.trim()) {
-      toast.error("Please enter your invite code");
       return false;
     }
     return true;
@@ -106,8 +94,7 @@ const Register: React.FC<RegisterProps> = ({ prefillInviteToken }) => {
       name,
       email,
       password,
-      orgMode === "create" ? orgName : undefined,
-      orgMode === "invite" ? inviteToken : undefined
+      orgName,
     );
     setLoading(false);
     if (result === true) {
@@ -308,85 +295,23 @@ const Register: React.FC<RegisterProps> = ({ prefillInviteToken }) => {
               >
                 <h1 className="text-2xl font-bold mb-1 text-center">Your organization</h1>
                 <p className="text-muted text-sm mb-6 text-center">
-                  Create a new org or join an existing one
+                  Create your organization to get started
                 </p>
 
                 <div className="space-y-4">
-                  {/* Toggle */}
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setOrgMode("create")}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${
-                        orgMode === "create"
-                          ? "gradient-accent text-white"
-                          : "bg-white/5 border border-white/10 text-muted hover:text-white hover:border-white/20"
-                      }`}
-                    >
-                      <Building2 size={16} />
-                      New org
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOrgMode("invite")}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${
-                        orgMode === "invite"
-                          ? "gradient-accent text-white"
-                          : "bg-white/5 border border-white/10 text-muted hover:text-white hover:border-white/20"
-                      }`}
-                    >
-                      <Ticket size={16} />
-                      Have invite
-                    </button>
+                  <div className="relative group">
+                    <Building2 size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="Organization name"
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      className={inputClass}
+                    />
                   </div>
-
-                  <AnimatePresence mode="wait">
-                    {orgMode === "create" ? (
-                      <motion.div
-                        key="create"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="relative group">
-                          <Building2 size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" />
-                          <input
-                            type="text"
-                            placeholder="Organization name"
-                            value={orgName}
-                            onChange={(e) => setOrgName(e.target.value)}
-                            className={inputClass}
-                          />
-                        </div>
-                        <p className="text-xs text-muted mt-2">
-                          You'll be the admin of this organization and can invite teammates later.
-                        </p>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="invite"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="relative group">
-                          <Ticket size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" />
-                          <input
-                            type="text"
-                            placeholder="Invite code"
-                            value={inviteToken}
-                            onChange={(e) => setInviteToken(e.target.value)}
-                            className={inputClass}
-                          />
-                        </div>
-                        <p className="text-xs text-muted mt-2">
-                          Paste the invite code you received from your team admin.
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <p className="text-xs text-muted">
+                    You'll be the admin of this organization and can add teammates later.
+                  </p>
                 </div>
 
                 {/* Navigation */}

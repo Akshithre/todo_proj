@@ -9,7 +9,6 @@ import Sidebar from "./components/Sidebar";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AcceptInvite from "./pages/AcceptInvite";
 import Dashboard from "./pages/Dashboard";
 import AddTask from "./pages/AddTask";
 import TaskList from "./pages/TaskList";
@@ -86,7 +85,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/landing" element={user ? <Navigate to="/" replace /> : <Landing />} />
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
-      <Route path="/accept-invite/:token" element={<AcceptInvite />} />
       <Route
         path="/*"
         element={

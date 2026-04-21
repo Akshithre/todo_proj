@@ -21,7 +21,7 @@ from .database import engine, get_db, Base, DATABASE_URL, SessionLocal
 from .models import (
     Task, User, Organization, Team, TeamMember,
     TaskComment, TaskReaction, TaskMention, Notification,
-    ActivityLog, InviteToken,
+    ActivityLog,
 )
 from .schemas import (
     # Auth
@@ -40,8 +40,6 @@ from .schemas import (
     ReactionCreate, ReactionResponse,
     NotificationResponse, UnreadCountResponse,
     ActivityResponse,
-    # Invite
-    InviteRequest, InviteResponse,
 )
 from .auth import (
     hash_password, verify_password,
@@ -49,7 +47,6 @@ from .auth import (
     get_current_user, get_optional_user,
     require_org_admin, require_superadmin,
 )
-from .email_service import send_invite_email
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -163,6 +160,8 @@ def call_ml_endpoint(task_data: dict) -> dict:
 def _user_task_filter(user: Optional["User"]):
     """Return a SQLAlchemy filter clause scoping tasks to the given user."""
     if user:
+        if user.role == "superadmin":
+            return text("1=1")  # Superadmin sees all tasks
         if user.org_id:
             return (Task.org_id == user.org_id) | ((Task.org_id == None) & (Task.user_id == user.user_id))
         return Task.user_id == user.user_id
@@ -278,40 +277,25 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     org = None
-    if req.invite_token:
-        invite = db.query(InviteToken).filter(
-            InviteToken.token == req.invite_token, InviteToken.is_used == False
-        ).first()
-        if not invite:
-            raise HTTPException(status_code=400, detail="Invalid or expired invite token")
-        org = db.query(Organization).filter(Organization.org_id == invite.org_id).first()
-        invite.is_used = True
-        team_id_from_invite = invite.team_id
-    elif req.org_name:
+    if req.org_name:
         slug = re.sub(r'[^a-z0-9]+', '-', req.org_name.lower()).strip('-')
         if db.query(Organization).filter(Organization.slug == slug).first():
             slug = f"{slug}-{uuid.uuid4().hex[:6]}"
         org = Organization(name=req.org_name, slug=slug)
         db.add(org)
         db.flush()
-        team_id_from_invite = None
-    else:
-        team_id_from_invite = None
 
     user = User(
         email=req.email,
         password_hash=hash_password(req.password),
         full_name=req.full_name,
-        role="admin" if (org and not req.invite_token) else "member",
+        role="admin" if org else "member",
         org_id=org.org_id if org else None,
     )
     db.add(user)
     db.flush()
 
-    if req.invite_token and team_id_from_invite:
-        db.add(TeamMember(team_id=team_id_from_invite, user_id=user.user_id, role="member"))
-
-    if org and not req.invite_token:
+    if org:
         # Auto-create a default team
         team = Team(org_id=org.org_id, name="General", description="Default team", created_by=user.user_id)
         db.add(team)
@@ -386,12 +370,6 @@ def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db),
     return {"detail": "Password changed"}
 
 
-@app.post("/auth/accept-invite/{token}", response_model=TokenResponse)
-def accept_invite(token: str, req: RegisterRequest, db: Session = Depends(get_db)):
-    req.invite_token = token
-    return register(req, db)
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 #  ADMIN ENDPOINTS (superadmin only)
 # ══════════════════════════════════════════════════════════════════════════════
@@ -425,6 +403,117 @@ def admin_stats(user: User = Depends(require_superadmin), db: Session = Depends(
 @app.get("/admin/users", response_model=List[UserResponse])
 def admin_list_users(user: User = Depends(require_superadmin), db: Session = Depends(get_db)):
     return db.query(User).all()
+
+
+@app.put("/admin/users/{user_id}", response_model=UserResponse)
+def admin_update_user(user_id: int, req: UserUpdate, user: User = Depends(require_superadmin),
+                      db: Session = Depends(get_db)):
+    target = db.query(User).filter(User.user_id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    for field, value in req.model_dump(exclude_unset=True).items():
+        setattr(target, field, value)
+    db.commit()
+    db.refresh(target)
+    return target
+
+
+@app.put("/admin/users/{user_id}/role")
+def admin_change_role(user_id: int, role: str = Query(...), user: User = Depends(require_superadmin),
+                      db: Session = Depends(get_db)):
+    if role not in ("superadmin", "admin", "member"):
+        raise HTTPException(status_code=400, detail="Invalid role")
+    target = db.query(User).filter(User.user_id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    target.role = role
+    db.commit()
+    return {"detail": f"Role updated to {role}"}
+
+
+@app.put("/admin/users/{user_id}/toggle-active")
+def admin_toggle_active(user_id: int, user: User = Depends(require_superadmin),
+                        db: Session = Depends(get_db)):
+    target = db.query(User).filter(User.user_id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target.user_id == user.user_id:
+        raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
+    target.is_active = not target.is_active
+    db.commit()
+    return {"detail": f"User {'activated' if target.is_active else 'deactivated'}", "is_active": target.is_active}
+
+
+@app.delete("/admin/users/{user_id}")
+def admin_delete_user(user_id: int, user: User = Depends(require_superadmin),
+                      db: Session = Depends(get_db)):
+    target = db.query(User).filter(User.user_id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target.user_id == user.user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    db.delete(target)
+    db.commit()
+    return {"detail": "User deleted"}
+
+
+@app.put("/admin/organizations/{org_id}", response_model=OrgResponse)
+def admin_update_org(org_id: int, req: OrgUpdate, user: User = Depends(require_superadmin),
+                     db: Session = Depends(get_db)):
+    org = db.query(Organization).filter(Organization.org_id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    for field, value in req.model_dump(exclude_unset=True).items():
+        setattr(org, field, value)
+    db.commit()
+    db.refresh(org)
+    return org
+
+
+@app.delete("/admin/organizations/{org_id}")
+def admin_delete_org(org_id: int, user: User = Depends(require_superadmin),
+                     db: Session = Depends(get_db)):
+    org = db.query(Organization).filter(Organization.org_id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    db.delete(org)
+    db.commit()
+    return {"detail": "Organization deleted"}
+
+
+@app.get("/admin/tasks", response_model=List[TaskResponse])
+def admin_list_tasks(user: User = Depends(require_superadmin), db: Session = Depends(get_db),
+                     limit: int = Query(100, le=500)):
+    tasks = db.query(Task).options(
+        joinedload(Task.creator), joinedload(Task.assignee)
+    ).order_by(Task.created_at.desc()).limit(limit).all()
+    task_ids = [t.task_id for t in tasks]
+    comment_counts, reaction_counts = _batch_task_counts(db, task_ids)
+    return [_build_task_response(t, db, user.user_id, comment_counts, reaction_counts) for t in tasks]
+
+
+@app.get("/admin/teams", response_model=List[TeamResponse])
+def admin_list_teams(user: User = Depends(require_superadmin), db: Session = Depends(get_db)):
+    teams = db.query(Team).all()
+    if not teams:
+        return []
+    team_ids = [t.team_id for t in teams]
+    mc_rows = db.query(
+        TeamMember.team_id, func.count(TeamMember.id)
+    ).filter(TeamMember.team_id.in_(team_ids)).group_by(TeamMember.team_id).all()
+    member_counts = {tid: cnt for tid, cnt in mc_rows}
+    tc_rows = db.query(
+        Task.team_id, func.count(Task.task_id)
+    ).filter(Task.team_id.in_(team_ids)).group_by(Task.team_id).all()
+    task_counts = {tid: cnt for tid, cnt in tc_rows}
+    return [
+        {
+            **{c.name: getattr(t, c.name) for c in t.__table__.columns},
+            "member_count": member_counts.get(t.team_id, 0),
+            "task_count": task_counts.get(t.team_id, 0),
+        }
+        for t in teams
+    ]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -478,20 +567,6 @@ def get_org_members(user: User = Depends(get_current_user), db: Session = Depend
     return db.query(User).filter(User.org_id == user.org_id).all()
 
 
-@app.post("/organizations/me/invite", response_model=InviteResponse)
-def invite_member(req: InviteRequest, user: User = Depends(require_org_admin), db: Session = Depends(get_db)):
-    token_str = uuid.uuid4().hex
-    invite = InviteToken(
-        token=token_str, org_id=user.org_id,
-        team_id=req.team_id, email=req.email,
-        created_by=user.user_id,
-    )
-    db.add(invite)
-    db.commit()
-    base_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    return InviteResponse(token=token_str, invite_url=f"{base_url}/accept-invite/{token_str}")
-
-
 @app.get("/organizations/me/activity", response_model=List[ActivityResponse])
 def get_org_activity(
     user: User = Depends(get_current_user),
@@ -512,9 +587,21 @@ def get_org_activity(
 
 @app.get("/teams", response_model=List[TeamResponse])
 def list_teams(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not user.org_id:
-        return []
-    teams = db.query(Team).filter(Team.org_id == user.org_id).all()
+    # Superadmin sees all teams across all orgs
+    if user.role == "superadmin":
+        teams = db.query(Team).all()
+    else:
+        # Teams user is a member of (any org) + all teams in user's own org
+        member_team_ids = {tm.team_id for tm in db.query(TeamMember.team_id).filter(
+            TeamMember.user_id == user.user_id).all()}
+        if user.org_id:
+            teams = db.query(Team).filter(
+                (Team.org_id == user.org_id) | (Team.team_id.in_(member_team_ids))
+            ).all() if member_team_ids else db.query(Team).filter(Team.org_id == user.org_id).all()
+        elif member_team_ids:
+            teams = db.query(Team).filter(Team.team_id.in_(member_team_ids)).all()
+        else:
+            return []
     if not teams:
         return []
     team_ids = [t.team_id for t in teams]
@@ -619,38 +706,13 @@ def add_team_member(team_id: int, req: AddMemberRequest, user: User = Depends(ge
     target = db.query(User).filter(User.email == req.email).first()
 
     if not target:
-        # User doesn't exist — send invite email instead
-        token_str = uuid.uuid4().hex
-        invite = InviteToken(
-            token=token_str, org_id=team.org_id,
-            team_id=team_id, email=req.email,
-            created_by=user.user_id,
-        )
-        db.add(invite)
-        _log_activity(db, user, "invite_sent", "team", team_id,
-                      {"email": req.email}, team_id)
-        db.commit()
-        org_name = org.name if org else "your organization"
-        sent = send_invite_email(
-            to_email=req.email,
-            inviter_name=user.full_name,
-            org_name=org_name,
-            team_name=team.name,
-            invite_token=token_str,
-        )
-        if sent:
-            return JSONResponse(
-                status_code=201,
-                content={"detail": "invite_sent", "email": req.email},
-            )
-        else:
-            return JSONResponse(
-                status_code=201,
-                content={"detail": "invite_created", "email": req.email,
-                         "message": "Invite created but email delivery failed. Share the link manually."},
-            )
+        raise HTTPException(status_code=404, detail="User not found. They must register first.")
 
     # User exists — add directly
+    # Also add them to the org if they don't belong to one
+    if not target.org_id:
+        target.org_id = team.org_id
+        target.role = "member"
     existing = db.query(TeamMember).filter(
         TeamMember.team_id == team_id, TeamMember.user_id == target.user_id
     ).first()

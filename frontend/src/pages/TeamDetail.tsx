@@ -82,15 +82,9 @@ const TeamDetailPage: React.FC = () => {
     if (!email.trim()) return;
     setAdding(true);
     try {
-      const res = await addTeamMember(teamId, email.trim());
-      if (res.detail === "invite_sent") {
-        toast.success(`Invite email sent to ${res.email}! They'll join once they accept.`, { duration: 5000 });
-      } else if (res.detail === "invite_created") {
-        toast.success(res.message || "Invite created. Share the link manually.", { duration: 5000 });
-      } else {
-        toast.success("Member added!");
-        load();
-      }
+      await addTeamMember(teamId, email.trim());
+      toast.success("Member added!");
+      load();
       setEmail("");
     } catch (err: any) {
       const detail = err?.response?.data?.detail;

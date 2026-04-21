@@ -35,7 +35,7 @@ api.interceptors.response.use(
 // ── Auth ──────────────────────────────────────────────────────────────────
 export const authRegister = (data: {
   full_name: string; email: string; password: string;
-  org_name?: string; invite_token?: string;
+  org_name?: string;
 }) => api.post("/auth/register", data).then((r) => r.data);
 
 export const authLogin = (email: string, password: string) =>
@@ -94,9 +94,6 @@ export const getOrgStats = () =>
 
 export const getOrgMembers = () =>
   api.get<User[]>("/organizations/me/members").then((r) => r.data);
-
-export const inviteMember = (email: string, team_id?: number) =>
-  api.post("/organizations/me/invite", { email, team_id }).then((r) => r.data);
 
 export const getOrgActivity = (limit?: number) =>
   api.get<Activity[]>("/organizations/me/activity", { params: { limit } }).then((r) => r.data);
@@ -187,3 +184,24 @@ export const adminGetOrgs = () =>
 
 export const adminGetUsers = () =>
   api.get<User[]>("/admin/users").then((r) => r.data);
+
+export const adminGetTasks = (limit?: number) =>
+  api.get<Task[]>("/admin/tasks", { params: { limit } }).then((r) => r.data);
+
+export const adminGetTeams = () =>
+  api.get<Team[]>("/admin/teams").then((r) => r.data);
+
+export const adminChangeUserRole = (userId: number, role: string) =>
+  api.put(`/admin/users/${userId}/role`, null, { params: { role } }).then((r) => r.data);
+
+export const adminToggleUserActive = (userId: number) =>
+  api.put(`/admin/users/${userId}/toggle-active`).then((r) => r.data);
+
+export const adminDeleteUser = (userId: number) =>
+  api.delete(`/admin/users/${userId}`).then((r) => r.data);
+
+export const adminUpdateOrg = (orgId: number, data: { name?: string; description?: string; plan?: string }) =>
+  api.put(`/admin/organizations/${orgId}`, data).then((r) => r.data);
+
+export const adminDeleteOrg = (orgId: number) =>
+  api.delete(`/admin/organizations/${orgId}`).then((r) => r.data);

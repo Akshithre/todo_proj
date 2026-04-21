@@ -10,7 +10,6 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     org_name: Optional[str] = None
-    invite_token: Optional[str] = None
 
 
 class LoginRequest(BaseModel):

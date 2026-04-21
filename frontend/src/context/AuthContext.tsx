@@ -6,7 +6,7 @@ interface AuthCtx {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string, orgName?: string, inviteToken?: string) => Promise<string | true>;
+  register: (name: string, email: string, password: string, orgName?: string) => Promise<string | true>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const register = async (
     name: string, email: string, password: string,
-    orgName?: string, inviteToken?: string
+    orgName?: string,
   ): Promise<string | true> => {
     try {
       const tokens = await authRegister({
@@ -94,7 +94,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email,
         password,
         org_name: orgName,
-        invite_token: inviteToken,
       });
       localStorage.setItem("access_token", tokens.access_token);
       localStorage.setItem("refresh_token", tokens.refresh_token);
